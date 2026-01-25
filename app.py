@@ -1,4 +1,4 @@
-import streamlit as st
+    import streamlit as st
 import base64
 import re
 from openai import OpenAI
@@ -14,7 +14,7 @@ def process_ai_logic(api_key, country, activity, gender, uploaded_file):
             v_resp = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": [
-                    {"type": "text", "text": "Analyze these clothes and give 3 English keywords."},
+                    {"type": "text", "text": "Analyze these clothes and give 3 short English keywords for fashion items."},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
                 ]}]
             )
@@ -22,162 +22,112 @@ def process_ai_logic(api_key, country, activity, gender, uploaded_file):
         
         r_resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": f"แนะนำชุดไป {country} อุณหภูมิ 1.8 องศา กิจกรรม {activity}"}]
+            messages=[{"role": "user", "content": f"แนะนำการแต่งกายไป {country} สำหรับกิจกรรม {activity} โดยเน้นสไตล์ที่เหมาะสมกับเพศ {gender} ขอคำแนะนำสั้นๆ 3-4 บรรทัด"}]
         )
         recommendation = r_resp.choices[0].message.content
 
         img_resp = client.images.generate(
             model="dall-e-3",
-            prompt=f"A 3D character, {gender}, wearing: {recommendation}. White background.",
+            prompt=f"A 3D high-quality fashion character, {gender}, wearing: {recommendation}. White studio background, professional lighting.",
             n=1, size="1024x1024"
         )
         return analysis_res, recommendation, img_resp.data[0].url
     except Exception as e:
         return str(e), None, None
 
-# --- 🎨 หน้า Login ฉบับทางการ (White Minimalist) ---
+# --- 🎨 หน้า Login (White Minimalist) ---
 def login_page():
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
-        
-        /* พื้นหลังสีขาวสะอาดตา */
-        .stApp {
-            background-color: #ffffff;
-        }
-
-        .login-box {
-            background: #ffffff;
-            padding: 40px 30px;
-            border-radius: 20px;
-            border: 1px solid #f1f5f9;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-            text-align: center;
-            max-width: 450px;
-            margin: auto;
-        }
-
-        .google-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            margin-bottom: 20px;
-            font-size: 16px;
-            color: #475569;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: #cbd5e1;
-            margin: 20px 0;
-        }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .divider span { padding: 0 10px; font-size: 13px; }
-
-        /* ปุ่มสีน้ำเงิน/ม่วงเข้มแบบทางการ */
-        .stButton>button {
-            width: 100%;
-            background-color: #4f46e5 !important;
-            color: white !important;
-            border-radius: 10px !important;
-            border: none !important;
-            padding: 12px !important;
-            font-size: 18px !important;
-            transition: 0.2s;
-        }
-        .stButton>button:hover {
-            background-color: #4338ca !important;
-        }
-
-        .footer-links {
-            margin-top: 25px;
-            font-size: 14px;
-            color: #64748b;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
+        .stApp { background-color: #ffffff; }
+        .login-box { background: white; padding: 40px; border-radius: 20px; border: 1px solid #f1f5f9; box-shadow: 0 10px 25px rgba(0,0,0,0.03); text-align: center; max-width: 450px; margin: auto; }
+        .stButton>button { width: 100%; background-color: #4f46e5 !important; color: white !important; border-radius: 10px !important; border: none !important; padding: 12px !important; }
         </style>
     """, unsafe_allow_html=True)
-
     e1, col_login, e2 = st.columns([0.1, 1, 0.1])
-    
     with col_login:
-        st.write("") # เว้นระยะบน
-        st.write("")
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        st.markdown("""
-            <h2 style='color:#1e293b; margin-bottom:30px; font-weight:500;'>เข้าสู่ระบบ Tripnify</h2>
-            <div class="google-btn">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" style="margin-right:10px;">
-                Continue with Google
-            </div>
-            <div class="divider"><span>หรือใช้อีเมลของคุณ</span></div>
-        """, unsafe_allow_html=True)
-
+        st.markdown("<h2 style='color:#1e293b; margin-bottom:30px;'>Tripnify Login</h2>", unsafe_allow_html=True)
         user = st.text_input("อีเมล", placeholder="email@example.com", label_visibility="collapsed")
         pwd = st.text_input("รหัสผ่าน", type="password", placeholder="Password", label_visibility="collapsed")
-        
-        st.markdown('<div style="text-align:right; font-size:12px; color:#6366f1; margin-bottom:20px; cursor:pointer;">ลืมรหัสผ่าน?</div>', unsafe_allow_html=True)
-
         if st.button("เข้าสู่ระบบ"):
             st.session_state['logged_in'] = True
             st.rerun()
-
-        st.markdown("""
-            <div class="footer-links">
-                <span style="color:#6366f1; cursor:pointer;">สร้างบัญชีใหม่</span>
-                <span style="color:#e2e8f0;">|</span>
-                <span style="cursor:pointer;">ทดลองใช้งาน (Guest)</span>
-            </div>
-        """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 📊 หน้า Dashboard (คงเดิม) ---
+# --- 📊 หน้า Dashboard (ปรับปรุงตามเงื่อนไขใหม่) ---
 def main_dashboard():
+    # CSS สำหรับ Dashboard โทนขาว
+    st.markdown("""
+        <style>
+        .main-card { background: white; padding: 20px; border-radius: 15px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
+        .shop-card { background: #f8fafc; padding: 15px; border-radius: 12px; border-left: 4px solid #4f46e5; margin-bottom: 10px; }
+        </style>
+    """, unsafe_allow_html=True)
+
     with st.sidebar:
-        st.title("⚙️ ตั้งค่า")
+        st.title("⚙️ การตั้งค่า")
         api_key = st.text_input("OpenAI API Key", type="password")
+        st.divider()
         if st.button("ออกจากระบบ"):
             st.session_state['logged_in'] = False
             st.rerun()
 
-    st.title("📍 สวัสดี นักเดินทาง")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("จุดหมาย", "Seoul, SK")
-    c2.metric("อากาศ", "1.8°C")
-    c3.metric("คำเตือน", "หนาวจัด")
-
+    st.title("👗 Tripnify Dashboard")
+    
     col1, col2 = st.columns([1, 1.5])
+
     with col1:
-        country = st.selectbox("ประเทศ", ["South Korea", "Japan", "Thailand"])
-        activity = st.selectbox("กิจกรรม", ["ท่องเที่ยว", "ทำงาน", "เดินป่า"])
-        gender = st.radio("เพศ", ["ชาย", "หญิง"])
-        img_file = st.file_uploader("📸 อัปโหลดรูปชุด", type=['jpg', 'png'])
-        run = st.button("✨ เริ่มวางแผน")
+        st.markdown('<div class="main-card">', unsafe_allow_html=True)
+        country = st.selectbox("📍 เลือกประเทศปลายทาง", ["South Korea", "Japan", "Thailand", "Vietnam", "Taiwan"])
+        activity = st.selectbox("🏃 ประเภทกิจกรรม", ["ท่องเที่ยวพักผ่อน", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ถ่ายรูป/Fashion", "ช้อปปิ้งในเมือง"])
+        gender = st.radio("👤 เพศ", ["ชาย", "หญิง", "ไม่ระบุ"])
+        img_file = st.file_uploader("📸 อัปโหลดรูปชุดที่มี (AI จะช่วยวิเคราะห์)", type=['jpg', 'png'])
+        run_btn = st.button("✨ เริ่มวิเคราะห์แผนการแต่งกาย")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    if run:
-        if not api_key: st.error("กรุณาใส่ API Key")
+    with col2:
+        if run_btn:
+            if not api_key:
+                st.warning("⚠️ กรุณาใส่ OpenAI API Key ในแถบด้านข้าง")
+            else:
+                with st.spinner("🚀 AI กำลังประมวลผลข้อมูล..."):
+                    v_out, r_out, img_url = process_ai_logic(api_key, country, activity, gender, img_file)
+                    
+                    if r_out:
+                        # 1. แสดงส่วนอากาศและคำเตือน (เฉพาะหลังกดปุ่ม)
+                        st.markdown("### 📋 ข้อมูลการเดินทาง")
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("ประเทศ", country)
+                        m2.metric("อากาศโดยประมาณ", "1.8°C")
+                        m3.metric("คำแนะนำ", "เตรียมชุดกันหนาว")
+                        
+                        st.divider()
+                        
+                        # 2. แสดงผลลัพธ์ AI
+                        st.image(img_url, caption="ภาพจำลองชุดที่แนะนำโดย AI")
+                        st.success(f"**คำแนะนำจาก AI:**\n\n{r_out}")
+                        
+                        # 3. จอแสดงผลเชื่อมโยงสินค้า E-commerce
+                        st.markdown("### 🛍️ รายการสินค้าที่แนะนำ (ช้อปปิ้ง)")
+                        # ดึงคำสำคัญจาก AI มาสร้างลิงก์ (ตัวอย่าง: Jacket, Scarf, Boots)
+                        items_to_buy = re.findall(r'\b[A-Z][a-z]+\b', r_out)[:3]
+                        if not items_to_buy: items_to_buy = ["Fashion", "Travel Gear"]
+                        
+                        for item in items_to_buy:
+                            enc_item = quote_plus(item)
+                            st.markdown(f"""
+                                <div class="shop-card">
+                                    <span style='font-weight:500; color:#1e293b;'>🔍 ค้นหา {item}:</span><br>
+                                    <a href='https://shopee.co.th/search?keyword={enc_item}' target='_blank' style='color:#4f46e5; text-decoration:none;'>ดูบน Shopee</a> | 
+                                    <a href='https://www.lazada.co.th/catalog/?q={enc_item}' target='_blank' style='color:#4f46e5; text-decoration:none;'>ดูบน Lazada</a>
+                                </div>
+                            """, unsafe_allow_html=True)
         else:
-            with st.spinner("AI กำลังประมวลผล..."):
-                v_out, r_out, img_url = process_ai_logic(api_key, country, activity, gender, img_file)
-                with col2:
-                    st.info(f"วิเคราะห์ภาพ: {v_out}")
-                    if img_url: st.image(img_url, caption="AI Preview")
-                    st.write(r_out)
+            st.info("👋 ยินดีต้อนรับ! เลือกประเทศและกิจกรรมทางซ้ายเพื่อเริ่มการวิเคราะห์")
 
+# --- ส่วนควบคุมหน้าจอ ---
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if st.session_state['logged_in']: main_dashboard()
 else: login_page()
