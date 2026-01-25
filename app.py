@@ -35,21 +35,23 @@ def process_ai_logic(api_key, country, activity, gender, uploaded_file):
     except Exception as e:
         return str(e), None, None
 
-# --- 🎨 หน้า Login ฉบับปรับปรุงใหม่ให้สวยขึ้นตามรูป ---
+# --- 🎨 หน้า Login ฉบับทางการ (White Minimalist) ---
 def login_page():
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
         
+        /* พื้นหลังสีขาวสะอาดตา */
         .stApp {
-            background: linear-gradient(180deg, #6a5af9 0%, #3b2fb3 100%);
+            background-color: #ffffff;
         }
 
         .login-box {
-            background: rgba(255, 255, 255, 0.98);
+            background: #ffffff;
             padding: 40px 30px;
-            border-radius: 35px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border-radius: 20px;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
             text-align: center;
             max-width: 450px;
             margin: auto;
@@ -60,46 +62,49 @@ def login_page():
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 1px solid #e2e8f0;
-            border-radius: 15px;
+            border-radius: 10px;
             background: white;
             cursor: pointer;
             margin-bottom: 20px;
-            font-size: 18px;
+            font-size: 16px;
             color: #475569;
-            font-weight: 400;
         }
 
         .divider {
             display: flex;
             align-items: center;
             text-align: center;
-            color: #94a3b8;
-            margin: 25px 0;
+            color: #cbd5e1;
+            margin: 20px 0;
         }
         .divider::before, .divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #f1f5f9;
         }
-        .divider span { padding: 0 10px; font-size: 14px; }
+        .divider span { padding: 0 10px; font-size: 13px; }
 
+        /* ปุ่มสีน้ำเงิน/ม่วงเข้มแบบทางการ */
         .stButton>button {
             width: 100%;
-            background: linear-gradient(90deg, #7c5dfa, #5e3ff0) !important;
+            background-color: #4f46e5 !important;
             color: white !important;
-            border-radius: 20px !important;
+            border-radius: 10px !important;
             border: none !important;
-            padding: 14px !important;
-            font-size: 20px !important;
-            font-weight: 500 !important;
+            padding: 12px !important;
+            font-size: 18px !important;
+            transition: 0.2s;
+        }
+        .stButton>button:hover {
+            background-color: #4338ca !important;
         }
 
         .footer-links {
             margin-top: 25px;
-            font-size: 15px;
-            color: #5e3ff0;
+            font-size: 14px;
+            color: #64748b;
             display: flex;
             justify-content: center;
             gap: 15px;
@@ -110,19 +115,22 @@ def login_page():
     e1, col_login, e2 = st.columns([0.1, 1, 0.1])
     
     with col_login:
+        st.write("") # เว้นระยะบน
+        st.write("")
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("""
+            <h2 style='color:#1e293b; margin-bottom:30px; font-weight:500;'>เข้าสู่ระบบ Tripnify</h2>
             <div class="google-btn">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="22" style="margin-right:12px;">
-                ดำเนินการต่อด้วย Google
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" style="margin-right:10px;">
+                Continue with Google
             </div>
-            <div class="divider"><span>หรือเข้าสู่ระบบด้วยอีเมล</span></div>
+            <div class="divider"><span>หรือใช้อีเมลของคุณ</span></div>
         """, unsafe_allow_html=True)
 
-        user = st.text_input("อีเมล", placeholder="อีเมล", label_visibility="collapsed")
-        pwd = st.text_input("รหัสผ่าน", type="password", placeholder="รหัสผ่าน", label_visibility="collapsed")
+        user = st.text_input("อีเมล", placeholder="email@example.com", label_visibility="collapsed")
+        pwd = st.text_input("รหัสผ่าน", type="password", placeholder="Password", label_visibility="collapsed")
         
-        st.markdown('<div style="text-align:right; font-size:13px; color:#5e3ff0; margin-bottom:20px;">ลืมรหัสผ่าน?</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:right; font-size:12px; color:#6366f1; margin-bottom:20px; cursor:pointer;">ลืมรหัสผ่าน?</div>', unsafe_allow_html=True)
 
         if st.button("เข้าสู่ระบบ"):
             st.session_state['logged_in'] = True
@@ -130,14 +138,14 @@ def login_page():
 
         st.markdown("""
             <div class="footer-links">
-                <span>สมัครสมาชิกใหม่</span>
+                <span style="color:#6366f1; cursor:pointer;">สร้างบัญชีใหม่</span>
                 <span style="color:#e2e8f0;">|</span>
-                <span>ทดลองใช้งาน (Guest)</span>
+                <span style="cursor:pointer;">ทดลองใช้งาน (Guest)</span>
             </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 📊 หน้า Dashboard ---
+# --- 📊 หน้า Dashboard (คงเดิม) ---
 def main_dashboard():
     with st.sidebar:
         st.title("⚙️ ตั้งค่า")
@@ -170,7 +178,6 @@ def main_dashboard():
                     if img_url: st.image(img_url, caption="AI Preview")
                     st.write(r_out)
 
-# --- ควบคุมหน้าจอ ---
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if st.session_state['logged_in']: main_dashboard()
 else: login_page()
