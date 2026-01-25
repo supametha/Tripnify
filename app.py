@@ -1,4 +1,4 @@
-    import streamlit as st
+import streamlit as st
 import base64
 import re
 from openai import OpenAI
@@ -47,6 +47,8 @@ def login_page():
     """, unsafe_allow_html=True)
     e1, col_login, e2 = st.columns([0.1, 1, 0.1])
     with col_login:
+        st.write("")
+        st.write("")
         st.markdown('<div class="login-box">', unsafe_allow_html=True)
         st.markdown("<h2 style='color:#1e293b; margin-bottom:30px;'>Tripnify Login</h2>", unsafe_allow_html=True)
         user = st.text_input("อีเมล", placeholder="email@example.com", label_visibility="collapsed")
@@ -56,9 +58,8 @@ def login_page():
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 📊 หน้า Dashboard (ปรับปรุงตามเงื่อนไขใหม่) ---
+# --- 📊 หน้า Dashboard ---
 def main_dashboard():
-    # CSS สำหรับ Dashboard โทนขาว
     st.markdown("""
         <style>
         .main-card { background: white; padding: 20px; border-radius: 15px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
@@ -83,7 +84,7 @@ def main_dashboard():
         country = st.selectbox("📍 เลือกประเทศปลายทาง", ["South Korea", "Japan", "Thailand", "Vietnam", "Taiwan"])
         activity = st.selectbox("🏃 ประเภทกิจกรรม", ["ท่องเที่ยวพักผ่อน", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ถ่ายรูป/Fashion", "ช้อปปิ้งในเมือง"])
         gender = st.radio("👤 เพศ", ["ชาย", "หญิง", "ไม่ระบุ"])
-        img_file = st.file_uploader("📸 อัปโหลดรูปชุดที่มี (AI จะช่วยวิเคราะห์)", type=['jpg', 'png'])
+        img_file = st.file_uploader("📸 อัปโหลดรูปชุดที่มี", type=['jpg', 'png'])
         run_btn = st.button("✨ เริ่มวิเคราะห์แผนการแต่งกาย")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -96,22 +97,17 @@ def main_dashboard():
                     v_out, r_out, img_url = process_ai_logic(api_key, country, activity, gender, img_file)
                     
                     if r_out:
-                        # 1. แสดงส่วนอากาศและคำเตือน (เฉพาะหลังกดปุ่ม)
                         st.markdown("### 📋 ข้อมูลการเดินทาง")
                         m1, m2, m3 = st.columns(3)
                         m1.metric("ประเทศ", country)
                         m2.metric("อากาศโดยประมาณ", "1.8°C")
-                        m3.metric("คำแนะนำ", "เตรียมชุดกันหนาว")
+                        m3.metric("คำแนะนำ", "เตรียมชุดให้พร้อม")
                         
                         st.divider()
-                        
-                        # 2. แสดงผลลัพธ์ AI
                         st.image(img_url, caption="ภาพจำลองชุดที่แนะนำโดย AI")
                         st.success(f"**คำแนะนำจาก AI:**\n\n{r_out}")
                         
-                        # 3. จอแสดงผลเชื่อมโยงสินค้า E-commerce
-                        st.markdown("### 🛍️ รายการสินค้าที่แนะนำ (ช้อปปิ้ง)")
-                        # ดึงคำสำคัญจาก AI มาสร้างลิงก์ (ตัวอย่าง: Jacket, Scarf, Boots)
+                        st.markdown("### 🛍️ สินค้าที่แนะนำ")
                         items_to_buy = re.findall(r'\b[A-Z][a-z]+\b', r_out)[:3]
                         if not items_to_buy: items_to_buy = ["Fashion", "Travel Gear"]
                         
@@ -119,15 +115,14 @@ def main_dashboard():
                             enc_item = quote_plus(item)
                             st.markdown(f"""
                                 <div class="shop-card">
-                                    <span style='font-weight:500; color:#1e293b;'>🔍 ค้นหา {item}:</span><br>
-                                    <a href='https://shopee.co.th/search?keyword={enc_item}' target='_blank' style='color:#4f46e5; text-decoration:none;'>ดูบน Shopee</a> | 
-                                    <a href='https://www.lazada.co.th/catalog/?q={enc_item}' target='_blank' style='color:#4f46e5; text-decoration:none;'>ดูบน Lazada</a>
+                                    <span style='font-weight:500;'>🔍 ค้นหา {item}:</span><br>
+                                    <a href='https://shopee.co.th/search?keyword={enc_item}' target='_blank'>Shopee</a> | 
+                                    <a href='https://www.lazada.co.th/catalog/?q={enc_item}' target='_blank'>Lazada</a>
                                 </div>
                             """, unsafe_allow_html=True)
         else:
-            st.info("👋 ยินดีต้อนรับ! เลือกประเทศและกิจกรรมทางซ้ายเพื่อเริ่มการวิเคราะห์")
+            st.info("👋 เลือกประเทศและกิจกรรมทางซ้ายเพื่อเริ่มการวิเคราะห์")
 
-# --- ส่วนควบคุมหน้าจอ ---
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if st.session_state['logged_in']: main_dashboard()
 else: login_page()
