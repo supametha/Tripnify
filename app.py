@@ -87,8 +87,7 @@ def main_dashboard():
 
     with col2:
         with col2:
-        if run_btn:
-            with col2:
+        with col2:
         if run_btn:
             v_out, r_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
             
