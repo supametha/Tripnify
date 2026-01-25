@@ -86,8 +86,7 @@ def main_dashboard():
             run_btn = st.button("✨ เริ่มวิเคราะห์")
 
     with col2:
-        if run_btn:
-            with col2:
+      with col2:
         if run_btn:
             v_out, r_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
             
@@ -132,3 +131,17 @@ def main_dashboard():
                 """, unsafe_allow_html=True)
         else:
             st.info("👈 กรุณากรอกข้อมูลการเดินทางและกดปุ่มเริ่มวิเคราะห์")
+def login_page():
+    st.title("Tripnify Login")
+    user = st.text_input("Username")
+    if st.button("Login"):
+        st.session_state['logged_in'] = True
+        st.rerun()
+
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+if st.session_state['logged_in']:
+    main_dashboard()
+else:
+    login_page()
