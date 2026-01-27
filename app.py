@@ -162,11 +162,16 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
-    # --- แก้ไขส่วนปุ่ม Google ให้เหลืออันเดียวและใช้โลโก้ใหม่ (บรรทัด 160-172) ---
+    # --- แก้ไขส่วนปุ่ม Google (บรรทัด 160 เป็นต้นไป) ---
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     
-    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่สวยงาม
-    st.markdown(f"""
+    # สร้างปุ่มที่มีโลโก้และข้อความในปุ่มเดียว
+    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, icon=":material/login:"):
+        st.session_state['logged_in'] = True
+        st.rerun()
+
+    # แสดงโลโก้ Google ขนาดเล็กประกอบเพื่อความสวยงาม (เลือกใช้ลิงก์ที่เสถียร)
+    st.image(google_logo_url, width=24)
         <div style="background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <img src="{google_logo_url}" width="24px">
             <span style="color: #3c4043; font-weight: 500; font-family: 'Google Sans',arial,sans-serif;">Continue with Google</span>
