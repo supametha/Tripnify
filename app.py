@@ -162,18 +162,19 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
-    # ปุ่ม Google Login พร้อมโลโก้ (บรรทัดที่ 165-171)
-    google_icon = "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Color_Icon.svg"
+    # --- แก้ไขส่วนปุ่ม Google ให้เหลืออันเดียวและใช้โลโก้ใหม่ (บรรทัด 160-172) ---
+    google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
+    
+    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่สวยงาม
     st.markdown(f"""
-        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
-            <button class="google-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                <img src="{google_icon}" width="20px"> Continue with Google
-            </button>
+        <div style="background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <img src="{google_logo_url}" width="24px">
+            <span style="color: #3c4043; font-weight: 500; font-family: 'Google Sans',arial,sans-serif;">Continue with Google</span>
         </div>
     """, unsafe_allow_html=True)
-    
-    # เพิ่ม Logic การกด (เนื่องจาก Markdown button ตรวจสอบสถานะยากใน Streamlit จึงแนะนำให้ใช้ st.button แบบเดิมแต่ปรับ Style แทนจะเสถียรกว่า)
-    if st.button("Continue with Google", use_container_width=True, key="real_google_btn"):
+
+    # ปุ่มจริงที่ใช้กดเพื่อเข้าสู่ระบบ (วางทับเพื่อรับ Event การคลิก)
+    if st.button("คลิกเพื่อเข้าสู่ระบบด้วย Google", use_container_width=True, key="google_login_final"):
         st.session_state['logged_in'] = True
         st.rerun()
     
