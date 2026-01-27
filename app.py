@@ -140,7 +140,7 @@ def login_page():
     st.markdown("""
         <style>
         .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
-        .social-login-box {
+        .social-container {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -148,7 +148,10 @@ def login_page():
             border: 1px solid #dadce0;
             border-radius: 8px;
             padding: 10px;
-            margin-bottom: 5px;
+            margin-bottom: -48px; /* เลื่อนกล่องขึ้นไปทับปุ่ม */
+            pointer-events: none; /* เพื่อให้คลิกทะลุไปที่ปุ่มข้างใต้ได้ */
+            position: relative;
+            z-index: 10;
         }
         .social-text {
             color: #3c4043;
@@ -166,41 +169,17 @@ def login_page():
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     facebook_logo = "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
 
-    # --- ส่วน Google ---
-    st.markdown(f'<div class="social-login-box"><img src="{google_logo}" width="18px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span></div>', unsafe_allow_html=True)
-    if st.button("ยืนยันเข้าใช้งานด้วย Google", use_container_width=True, key="google_login"):
+    # --- ช่อง Google (Logo + Text) ---
+    st.markdown(f'<div class="social-container"><img src="{google_logo}" width="18px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span></div>', unsafe_allow_html=True)
+    if st.button("", use_container_width=True, key="google_login"):
         st.session_state['logged_in'] = True
         st.rerun()
 
-    st.write("") # เว้นวรรคเล็กน้อย
+    st.write("") # ระยะห่าง
 
-    # --- ส่วน Facebook ---
-    st.markdown(f'<div class="social-login-box"><img src="{facebook_logo}" width="20px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Facebook</span></div>', unsafe_allow_html=True)
-    if st.button("ยืนยันเข้าใช้งานด้วย Facebook", use_container_width=True, key="fb_login"):
-        st.session_state['logged_in'] = True
-        st.rerun()
-    
-    st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
-    
-    user = st.text_input("ชื่อผู้ใช้งาน (Username)", placeholder="กรอกชื่อผู้ใช้งาน")
-    password = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="กรอกรหัสผ่าน")
-    
-    col_l, col_r = st.columns(2)
-    with col_l:
-        if st.button("🔑 เข้าสู่ระบบ", use_container_width=True):
-            if user: 
-                st.session_state['logged_in'] = True
-                st.rerun()
-    with col_r:
-        if st.button("👤 ทดลองใช้ (Guest)", use_container_width=True):
-            st.session_state['logged_in'] = True
-            st.rerun()
-            
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.caption("<center>Tripnify - Travel Smart, Dress Right</center>", unsafe_allow_html=True)
-
-    # ปุ่มจริงสำหรับกด Action
-    if st.button("ยืนยันเข้าใช้งานด้วย Google", use_container_width=True, key="google_login_main"):
+    # --- ช่อง Facebook (Logo + Text) ---
+    st.markdown(f'<div class="social-container"><img src="{facebook_logo}" width="20px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Facebook</span></div>', unsafe_allow_html=True)
+    if st.button("", use_container_width=True, key="fb_login"):
         st.session_state['logged_in'] = True
         st.rerun()
     
