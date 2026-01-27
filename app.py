@@ -150,13 +150,21 @@ def login_page():
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     
     # รวมโลโก้และปุ่มเข้าด้วยกันเป็นอันเดียว
-    col_icon, col_btn = st.columns([1, 10])
-    with col_icon:
-        st.image(google_logo_url, width=35)
-    with col_btn:
-        if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, key="google_login_main"):
-            st.session_state['logged_in'] = True
-            st.rerun()
+    # --- แก้ไขปุ่ม Google ให้มีโลโก้อยู่ข้างใน (บรรทัด 165-171) ---
+    google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
+    
+    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่มีโลโก้และข้อความอยู่บรรทัดเดียวกัน
+    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, icon=":material/login:"):
+        st.session_state['logged_in'] = True
+        st.rerun()
+    
+    # แสดงโลโก้จิ๋ววางตำแหน่งให้ดูเหมือนอยู่ในปุ่ม (ทางเลือกที่เสถียรที่สุดเพื่อเลี่ยง IndentationError)
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: -45px; margin-right: 220px; pointer-events: none;">
+            <img src="{google_logo_url}" width="22px">
+        </div>
+        <div style="margin-top: 25px;"></div>
+    """, unsafe_allow_html=True)
     
     st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
     
