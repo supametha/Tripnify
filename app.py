@@ -137,27 +137,52 @@ def main_dashboard():
 
 # --- 🔑 3. หน้า Login ---
 def login_page():
+    # --- CSS ปรับแต่งให้ปุ่มเนียนไปกับกล่อง ---
     st.markdown("""
         <style>
-        .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
-        .social-container {
+        /* ซ่อนตัวหนังสือเดิมของปุ่ม Streamlit */
+        div.stButton > button {
+            color: transparent;
+            background-color: transparent;
+            border: 1px solid #dadce0;
+            height: 50px;
+            width: 100%;
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* เมื่อเอาเมาส์วางให้มีสีพื้นหลังอ่อนๆ */
+        div.stButton > button:hover {
+            background-color: #f8f9fa;
+            border: 1px solid #dadce0;
+            color: transparent;
+        }
+
+        /* กล่อง Social ที่เราสร้างขึ้นมาซ้อน */
+        .custom-social-btn {
+            position: absolute;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: white;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: -48px; /* เลื่อนกล่องขึ้นไปทับปุ่ม */
-            pointer-events: none; /* เพื่อให้คลิกทะลุไปที่ปุ่มข้างใต้ได้ */
-            position: relative;
-            z-index: 10;
+            width: 100%;
+            height: 50px;
+            top: 0;
+            pointer-events: none; /* ให้คลิกทะลุไปที่ปุ่มข้างล่าง */
+            z-index: 2;
         }
+        
+        .fb-style {
+            background-color: #3b5998; /* สีน้ำเงิน Facebook */
+            border-radius: 8px;
+        }
+        
+        .fb-text { color: white !important; }
         .social-text {
-            color: #3c4043;
-            font-family: sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-weight: 500;
-            font-size: 14px;
+            font-size: 16px;
+            color: #3c4043;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -169,22 +194,38 @@ def login_page():
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     facebook_logo = "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
 
-    # --- ช่อง Google (Logo + Text) ---
-    st.markdown(f'<div class="social-container"><img src="{google_logo}" width="18px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span></div>', unsafe_allow_html=True)
-    if st.button("", use_container_width=True, key="google_login"):
-        st.session_state['logged_in'] = True
-        st.rerun()
+    # --- ปุ่ม Google ---
+    # ใช้ container เพื่อคุมตำแหน่งปุ่ม
+    c1 = st.container()
+    with c1:
+        st.markdown(f'''
+            <div class="custom-social-btn">
+                <img src="{google_logo}" width="20px" style="margin-right: 12px;">
+                <span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span>
+            </div>
+        ''', unsafe_allow_html=True)
+        if st.button("google_hidden_btn", key="google_login", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
 
-    st.write("") # ระยะห่าง
+    st.write("") # เว้นระยะห่าง
 
-    # --- ช่อง Facebook (Logo + Text) ---
-    st.markdown(f'<div class="social-container"><img src="{facebook_logo}" width="20px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Facebook</span></div>', unsafe_allow_html=True)
-    if st.button("", use_container_width=True, key="fb_login"):
-        st.session_state['logged_in'] = True
-        st.rerun()
+    # --- ปุ่ม Facebook ---
+    c2 = st.container()
+    with c2:
+        st.markdown(f'''
+            <div class="custom-social-btn fb-style">
+                <img src="{facebook_logo}" width="22px" style="margin-right: 12px; filter: brightness(0) invert(1);">
+                <span class="social-text fb-text">เข้าสู่ระบบด้วยบัญชี Facebook</span>
+            </div>
+        ''', unsafe_allow_html=True)
+        if st.button("fb_hidden_btn", key="fb_login", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
     
-    st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin: 25px 0;'>หรือ</p>", unsafe_allow_html=True)
     
+    # --- ส่วน Login ปกติ ---
     user = st.text_input("ชื่อผู้ใช้งาน (Username)", placeholder="กรอกชื่อผู้ใช้งาน")
     password = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="กรอกรหัสผ่าน")
     
