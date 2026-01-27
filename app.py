@@ -147,14 +147,22 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
+    # --- 1. ประกาศ URL โลโก้ (บรรทัด 160) ---
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-    
-    # รวมโลโก้และปุ่มเข้าด้วยกันเป็นอันเดียว
-    # --- แก้ไขปุ่ม Google ให้มีโลโก้อยู่ข้างใน (บรรทัด 165-171) ---
-    google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-    
-    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่มีโลโก้และข้อความอยู่บรรทัดเดียวกัน
-    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, icon=":material/login:"):
+
+    # --- 2. ส่วนปุ่ม Google ที่ปรับให้โลโก้ตรงกับตัวอักษร ---
+    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่จัดวางโลโก้และข้อความให้อยู่กึ่งกลางร่วมกัน
+    st.markdown(f"""
+        <div style="background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer;">
+            <img src="{google_logo_url}" width="20px" style="margin-bottom: 0px;">
+            <span style="color: #3c4043; font-weight: 500; font-family: 'Google Sans', arial, sans-serif; font-size: 16px;">
+                ลงชื่อเข้าใช้ด้วย Google
+            </span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- 3. ปุ่มจริงที่ใช้รับแรงกด (วางต่อท้ายทันที) ---
+    if st.button("ยืนยันการเข้าสู่ระบบด้วย Google", use_container_width=True, key="google_login_final"):
         st.session_state['logged_in'] = True
         st.rerun()
     
