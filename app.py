@@ -147,31 +147,19 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
-    # --- 1. ประกาศ URL โลโก้ (บรรทัด 160) ---
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
 
-    # --- 2. ส่วนปุ่ม Google ที่ปรับให้โลโก้ตรงกับตัวอักษร ---
-    # ใช้ st.markdown เพื่อสร้างปุ่มจำลองที่จัดวางโลโก้และข้อความให้อยู่กึ่งกลางร่วมกัน
-    st.markdown(f"""
-        <div style="background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer;">
-            <img src="{google_logo_url}" width="20px" style="margin-bottom: 0px;">
-            <span style="color: #3c4043; font-weight: 500; font-family: 'Google Sans', arial, sans-serif; font-size: 16px;">
-                ลงชื่อเข้าใช้ด้วย Google
-            </span>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # --- 3. ปุ่มจริงที่ใช้รับแรงกด (วางต่อท้ายทันที) ---
-    if st.button("ยืนยันการเข้าสู่ระบบด้วย Google", use_container_width=True, key="google_login_final"):
+    # สร้างปุ่ม Google อันเดียว และใช้ CSS จัดตำแหน่งโลโก้ให้ตรงกับตัวอักษร
+    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, key="google_login_main"):
         st.session_state['logged_in'] = True
         st.rerun()
-    
-    # แสดงโลโก้จิ๋ววางตำแหน่งให้ดูเหมือนอยู่ในปุ่ม (ทางเลือกที่เสถียรที่สุดเพื่อเลี่ยง IndentationError)
+
+    # ส่วนของโลโก้ที่วางซ้อนให้ตรงกับตัวอักษรพอดี
     st.markdown(f"""
-        <div style="text-align: center; margin-top: -45px; margin-right: 220px; pointer-events: none;">
-            <img src="{google_logo_url}" width="22px">
+        <div style="text-align: center; margin-top: -44px; margin-right: 215px; pointer-events: none;">
+            <img src="{google_logo_url}" width="18px" style="vertical-align: middle;">
         </div>
-        <div style="margin-top: 25px;"></div>
+        <div style="margin-top: 28px;"></div>
     """, unsafe_allow_html=True)
     
     st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
