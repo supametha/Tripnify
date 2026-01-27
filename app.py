@@ -147,7 +147,14 @@ def login_page():
     st.markdown("""
         <style>
         .stButton > button { border-radius: 8px; height: 3.2em; font-weight: 500; }
-        .google-btn { border: 1px solid #dadce0 !important; background-color: white !important; color: #3c4043 !important; }
+        .google-btn { 
+            border: 1px solid #dadce0 !important; 
+            background-color: white !important; 
+            color: #3c4043 !important;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 500;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -155,8 +162,18 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
-    # ปุ่ม Google Login
-    if st.button("🔴 Continue with Google", use_container_width=True):
+    # ปุ่ม Google Login พร้อมโลโก้ (บรรทัดที่ 165-171)
+    google_icon = "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Color_Icon.svg"
+    st.markdown(f"""
+        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+            <button class="google-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                <img src="{google_icon}" width="20px"> Continue with Google
+            </button>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # เพิ่ม Logic การกด (เนื่องจาก Markdown button ตรวจสอบสถานะยากใน Streamlit จึงแนะนำให้ใช้ st.button แบบเดิมแต่ปรับ Style แทนจะเสถียรกว่า)
+    if st.button("Continue with Google", use_container_width=True, key="real_google_btn"):
         st.session_state['logged_in'] = True
         st.rerun()
     
