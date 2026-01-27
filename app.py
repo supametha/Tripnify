@@ -61,19 +61,24 @@ def main_dashboard():
     with col1:
         with st.container(border=True):
             st.subheader("🗓️ ข้อมูลการเดินทาง")
-            country = st.selectbox("จุดหมาย", ["South Korea", "Japan", "Vietnam"])
+            # แก้ไขจุดหมาย 5 อัน
+            country = st.selectbox("จุดหมาย", ["South Korea", "Japan", "Vietnam", "Switzerland", "Iceland"])
+            
             d_col1, d_col2 = st.columns(2)
             start_date = d_col1.date_input("วันที่เริ่ม", datetime.now())
-            country = st.selectbox("จุดหมาย", ["South Korea", "Japan", "Vietnam", "Switzerland", "Iceland"])
-...
-activity = st.selectbox("กิจกรรม", ["ท่องเที่ยวถ่ายรูป", "เล่นสกี/กิจกรรมหิมะ", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ช้อปปิ้งในเมือง"])
+            end_date = d_col2.date_input("วันที่สิ้นสุด", datetime.now() + timedelta(days=5))
+            
+            # แก้ไขกิจกรรม
+            activity = st.selectbox("กิจกรรม", ["ท่องเที่ยวถ่ายรูป", "เล่นสกี/กิจกรรมหิมะ", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ช้อปปิ้งในเมือง"])
             gender = st.radio("เพศ", ["ชาย", "หญิง"])
+            
+            # แก้ไขการอัปโหลด/ถ่ายภาพ
             img_file = st.file_uploader("📸 อัปโหลดรูปชุด", type=['jpg', 'png', 'jpeg'])
-camera_file = st.camera_input("🤳 หรือเปิดกล้องถ่ายภาพชุดของคุณ")
+            camera_file = st.camera_input("🤳 หรือเปิดกล้องถ่ายภาพชุดของคุณ")
 
-# เช็คว่าถ้ามีการถ่ายรูป ให้ใช้รูปจากกล้องแทน
-if camera_file:
-    img_file = camera_file
+            if camera_file:
+                img_file = camera_file
+                
             run_btn = st.button("✨ เริ่มวิเคราะห์")
 
     with col2:
@@ -99,7 +104,6 @@ if camera_file:
             for i, item in enumerate(essentials, 1):
                 st.write(f"{i}. **{item}**")
             
-            # --- ส่วนที่แก้ไขตามสั่ง: แสดงรายละเอียดและประโยชน์เจาะจง ---
             with st.expander("คลิกเพื่อดูรายละเอียดสิ่งที่เตรียม"):
                 st.markdown(f"""
                 **รายละเอียดและประโยชน์ประกอบการตัดสินใจ (อากาศหนาวจัด):**
@@ -124,12 +128,34 @@ if camera_file:
         else:
             st.info("👈 กรุณากรอกข้อมูลการเดินทางและกดปุ่มเริ่มวิเคราะห์")
 
+# แก้ไขหน้า Login ใหม่ตามสั่ง
 def login_page():
-    st.title("Tripnify Login")
-    user = st.text_input("Username")
-    if st.button("Login"):
+    st.title("🌍 Tripnify Login")
+    st.markdown("---")
+    
+    # ส่วน Google Login (จำลอง)
+    if st.button("🔴 Continue with Google", use_container_width=True):
         st.session_state['logged_in'] = True
         st.rerun()
+    
+    st.markdown("<p style='text-align: center;'>OR</p>", unsafe_allow_html=True)
+    
+    user = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    
+    col_l1, col_l2 = st.columns(2)
+    with col_l1:
+        if st.button("🔑 เข้าสู่ระบบ", use_container_width=True):
+            if user:
+                st.session_state['logged_in'] = True
+                st.rerun()
+    with col_l2:
+        if st.button("👤 ทดลองใช้ (Guest)", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
+            
+    st.markdown("---")
+    st.caption("Tripnify - ช่วยคุณจัดกระเป๋าให้พร้อมทุกสภาพอากาศ")
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
