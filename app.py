@@ -83,23 +83,17 @@ def main_dashboard():
         if run_btn:
             v_out, r_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
             
-           # --- ส่วนที่ปรับปรุงใหม่: ข้อมูลการเดินทาง (อัปเดตคำเตือน) ---
             st.markdown(f"### 📍 จุดหมาย: {country}")
             
             w_col1, w_col2 = st.columns([1, 2])
             with w_col1:
-                # แสดงอุณหภูมิเฉลี่ยแบบ Metric
                 st.metric(label="🌡️ อุณหภูมิเฉลี่ย", value="1.8°C")
             
             with w_col2:
-                # ปรับเป็นคำเตือนสถานะอากาศที่เน้นความสวยงามและอ่านง่าย
-                st.warning("⚠️ **สถานะอากาศ: หนาวจัด** | โปรดเตรียมเครื่องกันหนาวให้พร้อมสำหรับการเดินทาง")
-            
-            st.divider()
+                st.warning("⚠️ **สถานะอากาศ: หนาวจัด** | โปรดเตรียมเครื่องกันหนาวให้พร้อม")
             
             st.divider()
 
-            # --- ส่วนผลการวิเคราะห์ ---
             st.markdown("### 🔍 ผลวิเคราะห์การแต่งกาย")
             st.markdown(f'<div class="analysis-box">{v_out}</div>', unsafe_allow_html=True)
             
@@ -107,7 +101,6 @@ def main_dashboard():
                 st.markdown("### 🎭 ภาพจำลองแนะนำ")
                 st.image(img_url, use_container_width=True)
             
-            # --- รายการเตรียมตัวและประโยชน์ ---
             st.markdown("### 📋 สิ่งที่ควรเตรียมเพิ่มเติม")
             essentials = [
                 "เสื้อโค้ทกันหนาวหนาพิเศษ (Padding/Down Jacket)",
@@ -146,15 +139,7 @@ def main_dashboard():
 def login_page():
     st.markdown("""
         <style>
-        .stButton > button { border-radius: 8px; height: 3.2em; font-weight: 500; }
-        .google-btn { 
-            border: 1px solid #dadce0 !important; 
-            background-color: white !important; 
-            color: #3c4043 !important;
-            border-radius: 8px;
-            padding: 10px;
-            font-weight: 500;
-        }
+        .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -162,28 +147,18 @@ def login_page():
     st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
     st.markdown("---")
     
-    # --- แก้ไขส่วนปุ่ม Google (บรรทัด 160 เป็นต้นไป) ---
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     
-    # สร้างปุ่มที่มีโลโก้และข้อความในปุ่มเดียว
-    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, icon=":material/login:"):
-        st.session_state['logged_in'] = True
-        st.rerun()
-
-    # แสดงโลโก้ Google ขนาดเล็กประกอบเพื่อความสวยงาม (เลือกใช้ลิงก์ที่เสถียร)
-    st.image(google_logo_url, width=24)
-        <div style="background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <img src="{google_logo_url}" width="24px">
-            <span style="color: #3c4043; font-weight: 500; font-family: 'Google Sans',arial,sans-serif;">Continue with Google</span>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # ปุ่มจริงที่ใช้กดเพื่อเข้าสู่ระบบ (วางทับเพื่อรับ Event การคลิก)
-    if st.button("คลิกเพื่อเข้าสู่ระบบด้วย Google", use_container_width=True, key="google_login_final"):
-        st.session_state['logged_in'] = True
-        st.rerun()
+    # รวมโลโก้และปุ่มเข้าด้วยกันเป็นอันเดียว
+    col_icon, col_btn = st.columns([1, 10])
+    with col_icon:
+        st.image(google_logo_url, width=35)
+    with col_btn:
+        if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, key="google_login_main"):
+            st.session_state['logged_in'] = True
+            st.rerun()
     
-    st.markdown("<p style='text-align: center; color: gray; margin: 15px 0;'>หรือ</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
     
     user = st.text_input("ชื่อผู้ใช้งาน (Username)", placeholder="กรอกชื่อผู้ใช้งาน")
     password = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="กรอกรหัสผ่าน")
