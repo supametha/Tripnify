@@ -119,7 +119,7 @@ def main_dashboard():
                 2. **กางเกงบุขน**: ชั้นขนด้านในเป็นฉนวนกันความเย็น ป้องกันผิวอักเสบจากความเย็นจัด
                 3. **หมวกและผ้าพันคอ**: รักษาอุณหภูมิศีรษะและลำคอ ไม่ให้ลมหนาวเข้าสู่ร่างกาย
                 4. **รองเท้าบูท**: ป้องกันความเย็นจากพื้นและกันความชื้นจากหิมะหรือฝน
-                5. **แผ่นแปะความร้อน**: ช่วยเพิ่มความอุ่นในจุดที่เลือดหมุนเวียนไปไม่ถึง เช่น ปลายนิ้ว
+                5. **แผ่นแปะความร้อน**: ช่วยเพิ่มความอุ่นในจุดที่เลือดหมวนเวียนไปไม่ถึง เช่น ปลายนิ้ว
                 """)
 
             st.markdown("### 🛍️ แหล่งช้อปปิ้งแนะนำ")
@@ -140,6 +140,16 @@ def login_page():
     st.markdown("""
         <style>
         .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
+        .google-login-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -149,54 +159,45 @@ def login_page():
     
     google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
 
-    # สร้างปุ่ม Google อันเดียว และใช้ CSS จัดตำแหน่งโลโก้ให้ตรงกับตัวอักษร
-    if st.button("ลงชื่อเข้าใช้ด้วย Google", use_container_width=True, key="google_login_main"):
-        st.session_state['logged_in'] = True
-        st.rerun()
-
-   # --- เริ่มต้นส่วนปุ่ม Google ที่ล็อคตำแหน่งโลโก้ (แทนที่บรรทัด 155-175) ---
-    google_logo_url = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-
-    # ใช้ HTML/CSS สร้างปุ่มที่โลโก้และข้อความอยู่บรรทัดเดียวกันเป๊ะ
+    # สร้างปุ่ม Google ที่มีโลโก้และตัวอักษรขนานกัน
     st.markdown(f"""
-        <style>
-            .google-btn {{
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background-color: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 10px;
-                cursor: pointer;
-                width: 100%;
-                margin-bottom: 10px;
-                transition: background-color 0.2s;
-            }}
-            .google-btn:hover {{
-                background-color: #f8f9fa;
-            }}
-            .google-btn img {{
-                width: 20px;
-                margin-right: 12px;
-            }}
-            .google-btn span {{
-                font-family: 'Inter', sans-serif;
-                font-weight: 500;
-                color: #444;
-            }}
-        </style>
-        <div class="google-btn" onclick="document.getElementById('hidden_google_btn').click();">
-            <img src="{google_logo_url}">
-            <span>ลงชื่อเข้าใช้ด้วย Google</span>
+        <div class="google-login-box">
+            <img src="{google_logo_url}" width="20px" style="margin-right: 12px;">
+            <span style="color: #3c4043; font-family: sans-serif; font-weight: 500;">
+                ลงชื่อเข้าใช้ด้วย Google
+            </span>
         </div>
     """, unsafe_allow_html=True)
 
-    # ปุ่มจริงที่ถูกซ่อนไว้เพื่อใช้รับคำสั่งจากปุ่ม HTML ด้านบน
-    if st.button("Google Login Hidden", key="hidden_google_btn", use_container_width=True):
+    # ปุ่มจริงสำหรับกด Action
+    if st.button("ยืนยันเข้าใช้งานด้วย Google", use_container_width=True, key="google_login_main"):
         st.session_state['logged_in'] = True
         st.rerun()
     
-    # ซ่อนปุ่มจริงที่หน้าตาไม่สวยด้วย CSS
-    st.markdown("<style>#hidden_google_btn { display: none; }</style>", unsafe_allow_html=True)
-    # --- สิ้นสุดส่วนปุ่ม Google ---
+    st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
+    
+    user = st.text_input("ชื่อผู้ใช้งาน (Username)", placeholder="กรอกชื่อผู้ใช้งาน")
+    password = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="กรอกรหัสผ่าน")
+    
+    col_l, col_r = st.columns(2)
+    with col_l:
+        if st.button("🔑 เข้าสู่ระบบ", use_container_width=True):
+            if user: 
+                st.session_state['logged_in'] = True
+                st.rerun()
+    with col_r:
+        if st.button("👤 ทดลองใช้ (Guest)", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
+            
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.caption("<center>Tripnify - Travel Smart, Dress Right</center>", unsafe_allow_html=True)
+
+# --- 🚀 4. ส่วนควบคุมหลัก ---
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+if st.session_state['logged_in']:
+    main_dashboard()
+else:
+    login_page()
