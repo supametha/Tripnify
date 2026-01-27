@@ -139,47 +139,25 @@ def main_dashboard():
 def login_page():
     st.markdown("""
         <style>
-        /* 1. จัดการปุ่ม Streamlit หลักให้โปร่งใสและทับเต็มพื้นที่ */
-        div.stButton > button {
-            height: 55px;
-            width: 100%;
-            background-color: transparent !important;
-            color: transparent !important;
-            border: 1px solid #dadce0 !important;
-            border-radius: 8px !important;
-            position: relative;
-            z-index: 2;
-        }
-        
-        /* 2. สร้างกล่องดีไซน์สำหรับแสดงผล (อยู่ข้างหลังปุ่มที่กดได้) */
-        .login-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 55px;
+        .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
+        .social-container {
             display: flex;
             align-items: center;
             justify-content: center;
+            background-color: white;
+            border: 1px solid #dadce0;
             border-radius: 8px;
-            z-index: 1;
-            pointer-events: none; /* เพื่อให้คลิกทะลุไปหาปุ่มข้างล่าง */
+            padding: 10px;
+            margin-bottom: -48px; /* เลื่อนกล่องขึ้นไปทับปุ่ม */
+            pointer-events: none; /* เพื่อให้คลิกทะลุไปที่ปุ่มข้างใต้ได้ */
+            position: relative;
+            z-index: 10;
         }
-
-        .google-box { background-color: white; border: 1px solid #dadce0; }
-        .facebook-box { background-color: white; border: 1px solid #dadce0; } /* เปลี่ยนเป็นสีขาวตาม Google */
-
-        .login-text {
+        .social-text {
+            color: #3c4043;
             font-family: sans-serif;
             font-weight: 500;
-            font-size: 16px;
-            color: #3c4043;
-        }
-
-        /* เอาขอบแดงตอนกดปุ่มออก */
-        div.stButton > button:focus {
-            box-shadow: none !important;
-            border: 1px solid #dadce0 !important;
+            font-size: 14px;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -191,37 +169,22 @@ def login_page():
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     facebook_logo = "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
 
-    # --- ส่วน Google ---
-    st.markdown(f'''
-        <div style="position: relative;">
-            <div class="login-overlay google-box">
-                <img src="{google_logo}" width="20px" style="margin-right: 12px;">
-                <span class="login-text">เข้าสู่ระบบด้วยบัญชี Google</span>
-            </div>
-        </div>
-    ''', unsafe_allow_html=True)
-    if st.button("google_click", key="google_login", use_container_width=True):
+    # --- ช่อง Google (Logo + Text) ---
+    st.markdown(f'<div class="social-container"><img src="{google_logo}" width="18px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span></div>', unsafe_allow_html=True)
+    if st.button("", use_container_width=True, key="google_login"):
         st.session_state['logged_in'] = True
         st.rerun()
 
-    st.write("") # ระยะห่างเล็กน้อย
+    st.write("") # ระยะห่าง
 
-    # --- ส่วน Facebook ---
-    st.markdown(f'''
-        <div style="position: relative;">
-            <div class="login-overlay facebook-box">
-                <img src="{facebook_logo}" width="22px" style="margin-right: 12px;">
-                <span class="login-text">เข้าสู่ระบบด้วยบัญชี Facebook</span>
-            </div>
-        </div>
-    ''', unsafe_allow_html=True)
-    if st.button("facebook_click", key="fb_login", use_container_width=True):
+    # --- ช่อง Facebook (Logo + Text) ---
+    st.markdown(f'<div class="social-container"><img src="{facebook_logo}" width="20px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Facebook</span></div>', unsafe_allow_html=True)
+    if st.button("", use_container_width=True, key="fb_login"):
         st.session_state['logged_in'] = True
         st.rerun()
     
-    st.markdown("<p style='text-align: center; color: gray; margin: 30px 0;'>หรือ</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray; margin: 20px 0;'>หรือ</p>", unsafe_allow_html=True)
     
-    # --- ส่วน Login ปกติ ---
     user = st.text_input("ชื่อผู้ใช้งาน (Username)", placeholder="กรอกชื่อผู้ใช้งาน")
     password = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="กรอกรหัสผ่าน")
     
