@@ -101,15 +101,17 @@ def render_3d_model():
 
 # --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
 # --- แก้ไขบรรทัดที่ 100 เป็นต้นไป ในฟังก์ชัน process_analysis ---
+# แก้ไขบรรทัดที่ 90 เป็นต้นไป
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
-            # ปรับ Prompt ให้ AI สรุปสินค้าเป็นรายการเพื่อดึง Keyword ไปใช้ต่อ
-            prompt = f"Analyze winter outfit for {city}, {country}. Activity: {activity}. Return analysis text and 3 specific recommended items with a short reason for each in {lang}."
+            # ปรับ Prompt สั่ง AI ให้ตอบแยกส่วน
+            prompt = f"Analyze outfit for {city}, {country}. Activity: {activity}. Respond in {lang}. Then, list 3 specific essential items for this trip with a reason for each."
             
-            # (ส่วนจำลองผลลัพธ์จาก AI เพื่อให้เห็นภาพการทำงาน)
-            analysis_text = f"สภาพอากาศที่ {city} หนาวเย็น แนะนำการแต่งกายแบบ Layering"
+            # (ส่วนส่ง API ปกติของคุณ...)
+            # จุดสำคัญ: คืนค่าเป็น Dictionary เพื่อเอาไปวนลูปสร้างปุ่มช้อปปิ้ง
+            # ตัวอย่างการคืนค่า: return {"analysis": "ข้อความวิเคราะห์", "items": [{"name": "ชื่อสินค้า", "reason": "เหตุผล"}]}, True
             items = [
                 {"name": "Ultra Warm Heattech", "reason": "ช่วยรักษาอุณหภูมิร่างกายชั้นในสุดได้ดีเยี่ยม"},
                 {"name": "Seamless Down Parka", "reason": "กันลมและละอองน้ำได้ดี เหมาะกับกิจกรรมกลางแจ้ง"},
@@ -178,14 +180,20 @@ def main_dashboard():
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
-    # --- แก้ไขบรรทัดที่ 195 เป็นต้นไป ใน main_dashboard (ส่วน col2) ---
-    with col2:
-        if run_btn:
-            data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
-            
-            # [ลำดับที่ 1] ผลวิเคราะห์การแต่งกาย (ย้ายขึ้นมาบนสุด)
+    # แก้ไขบรรทัดที่ 200 เป็นต้นไป (ในส่วน if run_btn:)
+            result_data, is_premium = process_analysis(...) # ดึงข้อมูลจากจุดที่ 1
+
+            # 1. ผลวิเคราะห์การแต่งกาย (ย้ายมาไว้บนสุด)
             st.subheader(t["analysis_title"])
-            st.info(data["text"])
+            st.info(result_data["analysis"]) # แสดงบทวิเคราะห์
+
+            st.divider()
+
+            # 2. 3D Model (อยู่ลำดับที่สอง)
+            if is_premium:
+                render_3d_model()
+            else:
+                st.image("...", caption="Reference Outfit")
             
             st.divider()
 
@@ -227,20 +235,30 @@ def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    st.markdown("""<style>
-        .header-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 30px 0; }
-        .social-btn-custom { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
-        .social-icon { width: 20px; margin-right: 12px; }
-        .social-text { font-weight: 500; font-size: 14px; color: #3c4043; }
-    </style>""", unsafe_allow_html=True)
+    # แก้ไขบรรทัดที่ 230 เป็นต้นไป
+            st.subheader(t["shop_title"])
+            
+            # CSS สำหรับตกแต่งปุ่มและโลโก้
+            st.markdown("""<style>
+                .shop-box { border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: #f8fafc; }
+                .btn-shopee { background: #EE4D2D; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+                .btn-uniqlo { background: #FF0000; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+                .btn-lazada { background: #00008B; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+            </style>""", unsafe_allow_html=True)
 
-    st.markdown(f"""
-        <div class="header-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
-            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
-            <p style='color: gray; font-size: 1.2rem; margin-top: -15px;'>{t['login_sub']}</p>
-        </div>
-    """, unsafe_allow_html=True)
+            for item in result_data["items"]: # ดึงสินค้าที่ AI แนะนำทีละตัว
+                kw = quote_plus(item["name"])
+                st.markdown(f"""
+                <div class="shop-box">
+                    <strong>🧥 {item['name']}</strong>
+                    <p style='font-size: 0.9rem; color: #64748b;'>{item['reason']}</p>
+                    <div style='display: flex; gap: 10px;'>
+                        <a href="https://shopee.co.th/search?keyword={kw}" class="btn-shopee">🟠 Shopee</a>
+                        <a href="https://www.uniqlo.com/th/th/search/?q={kw}" class="btn-uniqlo">🔴 Uniqlo</a>
+                        <a href="https://www.lazada.co.th/catalog/?q={kw}" class="btn-lazada">🔵 Lazada</a>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
