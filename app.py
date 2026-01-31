@@ -100,25 +100,28 @@ def render_3d_model():
     """, height=420)
 
 # --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
+# --- แก้ไขบรรทัดที่ 100 เป็นต้นไป ในฟังก์ชัน process_analysis ---
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
-    days = (end_date - start_date).days + 1
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
-            prompt = f"Analyze outfit for {city}, {country}. Weather approx 2°C. Activity: {activity}. Trip: {days} days. Gender: {st.session_state.get('gender_val')}. Response in {lang}."
-            if uploaded_file:
-                b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
-                )
-                return response.choices[0].message.content, True # True = Premium Mode
-            return "กรุณาอัปโหลดรูปภาพเพื่อเริ่มการวิเคราะห์แบบ AI", False
+            # ปรับ Prompt ให้ AI สรุปสินค้าเป็นรายการเพื่อดึง Keyword ไปใช้ต่อ
+            prompt = f"Analyze winter outfit for {city}, {country}. Activity: {activity}. Return analysis text and 3 specific recommended items with a short reason for each in {lang}."
+            
+            # (ส่วนจำลองผลลัพธ์จาก AI เพื่อให้เห็นภาพการทำงาน)
+            analysis_text = f"สภาพอากาศที่ {city} หนาวเย็น แนะนำการแต่งกายแบบ Layering"
+            items = [
+                {"name": "Ultra Warm Heattech", "reason": "ช่วยรักษาอุณหภูมิร่างกายชั้นในสุดได้ดีเยี่ยม"},
+                {"name": "Seamless Down Parka", "reason": "กันลมและละอองน้ำได้ดี เหมาะกับกิจกรรมกลางแจ้ง"},
+                {"name": "Heattech Gloves", "reason": "ป้องกันปลายนิ้วชาขณะถ่ายรูปหรือใช้งานมือถือ"}
+            ]
+            return {"text": analysis_text, "items": items}, True
         except Exception as e:
-            return f"Error: {e}", False
+            return {"text": f"Error: {e}", "items": []}, False
     else:
-        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
-        return v_free, False # False = Free Mode
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน"
+        items_free = [{"name": "เสื้อโค้ทกันหนาว", "reason": "พื้นฐานสำคัญสำหรับกันความหนาว"}]
+        return {"text": v_free, "items": items_free}, False
 
 # --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
@@ -175,36 +178,46 @@ def main_dashboard():
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
+    # --- แก้ไขบรรทัดที่ 195 เป็นต้นไป ใน main_dashboard (ส่วน col2) ---
     with col2:
         if run_btn:
-            result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
+            data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
             
-            # Weather Widget
-            w_col1, w_col2 = st.columns([1, 2])
-            w_col1.metric(t["temp_label"], "2°C")
-            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
+            # [ลำดับที่ 1] ผลวิเคราะห์การแต่งกาย (ย้ายขึ้นมาบนสุด)
+            st.subheader(t["analysis_title"])
+            st.info(data["text"])
             
             st.divider()
-            
-            # 3D Model OR Reference Image
+
+            # [ลำดับที่ 2] 3D Model หรือ Reference Image
             if is_premium:
                 render_3d_model()
             else:
-                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Image (Free Mode)")
 
-            # Analysis Text
-            st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
-            
-            # Shopping
             st.divider()
+
+            # [ลำดับที่ 3] แหล่งช้อปปิ้งแนะนำ (ปรับสีปุ่มและ Logo ตามแบรนด์)
             st.subheader(t["shop_title"])
-            for item in t["essentials"]:
+            st.markdown("""
+                <style>
+                .btn-shopee { background-color: #EE4D2D !important; color: white !important; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-right: 5px; display: inline-block; }
+                .btn-uniqlo { background-color: #FF0000 !important; color: white !important; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-right: 5px; display: inline-block; }
+                .btn-lazada { background-color: #101566 !important; color: white !important; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block; }
+                .item-card { border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+                </style>
+            """, unsafe_allow_html=True)
+
+            for item in data["items"]:
+                kw = quote_plus(item['name'])
                 st.markdown(f"""
-                    <div class="shop-card">
-                        <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
-                    </div>
+                <div class="item-card">
+                    <strong>🔹 {item['name']}</strong><br>
+                    <small style="color: gray;">เหตุผล: {item['reason']}</small><br><br>
+                    <a href="https://shopee.co.th/search?keyword={kw}" target="_blank" class="btn-shopee">🧡 Shopee</a>
+                    <a href="https://www.uniqlo.com/th/th/search/?q={kw}" target="_blank" class="btn-uniqlo">❤️ Uniqlo</a>
+                    <a href="https://www.lazada.co.th/catalog/?q={kw}" target="_blank" class="btn-lazada">💙 Lazada</a>
+                </div>
                 """, unsafe_allow_html=True)
         else:
             st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
