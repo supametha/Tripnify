@@ -225,7 +225,6 @@ def main_dashboard():
             st.subheader(t["analysis_title"])
             st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
 
-            )
 
             # 3D Model (Premium)
             if is_premium:
