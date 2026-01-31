@@ -3,8 +3,9 @@ import base64
 from openai import OpenAI
 from urllib.parse import quote_plus
 from datetime import datetime, timedelta
+import streamlit.components.v1 as components
 
-# --- 🌐 0. ระบบจัดการภาษา (Unified Language Control) ---
+# --- 🌐 0. ระบบจัดการภาษา ---
 LANG_DATA = {
     "Thai": {
         "settings": "⚙️ ตั้งค่าระบบ",
@@ -72,29 +73,54 @@ CITY_DATA = {
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
 
-# --- ⚙️ 1. ฟังก์ชันระบบวิเคราะห์ (Logic from Code 1) ---
+# --- 🎮 1. ฟังก์ชันแสดงผล 3D Model (Premium) ---
+def render_3d_model():
+    st.markdown("### 🎭 3D Outfit Character Preview")
+    components.html("""
+        <div id="viewer-3d" style="width: 100%; height: 400px; background: radial-gradient(circle, #334155 0%, #0f172a 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; cursor: grab; border: 2px solid #6366f1;">
+            <div id="character" style="font-size: 150px; transition: transform 0.1s linear; user-select: none;">🧥</div>
+            <div style="position: absolute; bottom: 20px; color: #94a3b8; font-family: sans-serif; font-size: 12px; pointer-events: none;">
+                [ ลากเพื่อหมุนดูชุดรอบตัว 360° ]
+            </div>
+        </div>
+        <script>
+            const el = document.getElementById('viewer-3d');
+            const char = document.getElementById('character');
+            let isDragging = false; let rotation = 0; let startX;
+            el.onmousedown = (e) => { isDragging = true; startX = e.pageX; el.style.cursor = 'grabbing'; };
+            window.onmouseup = () => { isDragging = false; el.style.cursor = 'grab'; };
+            window.onmousemove = (e) => {
+                if (!isDragging) return;
+                const delta = e.pageX - startX;
+                rotation += delta * 0.5;
+                char.style.transform = `rotateY(${rotation}deg)`;
+                startX = e.pageX;
+            };
+        </script>
+    """, height=420)
+
+# --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
     days = (end_date - start_date).days + 1
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
-            prompt = f"Analyze outfit for {city}, {country}. Weather is approx 2°C. Activity: {activity}. Trip duration: {days} days. Response in {lang}."
-            
+            prompt = f"Analyze outfit for {city}, {country}. Weather approx 2°C. Activity: {activity}. Trip: {days} days. Gender: {st.session_state.get('gender_val')}. Response in {lang}."
             if uploaded_file:
                 b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
                 )
-                return response.choices[0].message.content
-            return "กรุณาอัปโหลดรูปภาพเพื่อใช้ AI วิเคราะห์แบบละเอียด"
+                return response.choices[0].message.content, True # True = Premium Mode
+            return "กรุณาอัปโหลดรูปภาพเพื่อเริ่มการวิเคราะห์แบบ AI", False
         except Exception as e:
-            return f"Error: {e}"
+            return f"Error: {e}", False
     else:
-        # ระบบ Free Mode Logic
-        return "เสื้อนอก: Down Jacket หรือ Heattech หนาพิเศษ / กางเกง: บุขนกันลม / รองเท้า: บูทกันหิมะ" if lang == "Thai" else "Outer: Down Jacket / Bottom: Fleece Lined Pants / Shoes: Snow Boots"
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
+        return v_free, False # False = Free Mode
 
-# --- 🎨 2. หน้า Dashboard (Design from Code 2) ---
+# --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
@@ -138,7 +164,7 @@ def main_dashboard():
             end = d_col2.date_input(t["end_date"], datetime.now() + timedelta(days=3))
             
             activity = st.multiselect(t["activity_label"], t["activities"], default=t["activities"][0])
-            gender = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
+            st.session_state['gender_val'] = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
             
             st.divider()
             st.subheader(t["upload_section"])
@@ -151,34 +177,39 @@ def main_dashboard():
 
     with col2:
         if run_btn:
-            # ประมวลผล Logic
-            result = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
+            result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
             
-            # แสดงผล Weather Alert
+            # Weather Widget
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
-            w_col2.warning("❄️ สภาพอากาศหนาวจัด โปรดเตรียมชุดแต่งกายให้พร้อม")
+            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
             
             st.divider()
             
-            # แสดงผลวิเคราะห์
+            # 3D Model OR Reference Image
+            if is_premium:
+                render_3d_model()
+            else:
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
+
+            # Analysis Text
             st.subheader(t["analysis_title"])
             st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
             
-            # แสดง Shopping Recommendations
+            # Shopping
             st.divider()
             st.subheader(t["shop_title"])
             for item in t["essentials"]:
                 st.markdown(f"""
                     <div class="shop-card">
                         <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 สั่งซื้อออนไลน์ที่นี่</a>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
                     </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("👈 กรุณากรอกข้อมูลการเดินทางและรูปภาพชุดของคุณ จากนั้นกดปุ่มเริ่มวิเคราะห์")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
 
-# --- 🔑 3. หน้า Login ---
+# --- 🔑 4. หน้า Login ---
 def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
@@ -200,7 +231,6 @@ def login_page():
 
     _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
-        # Google Login
         st.markdown(f"""<div class="social-btn-custom">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
             <span class="social-text">เข้าสู่ระบบด้วย Google</span>
@@ -208,7 +238,6 @@ def login_page():
         if st.button("", key="g_login", use_container_width=True):
             st.session_state['logged_in'] = True; st.rerun()
 
-        # Facebook Login
         st.markdown(f"""<div class="social-btn-custom">
             <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
             <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
@@ -229,7 +258,7 @@ def login_page():
             if st.button(t["guest_btn"], use_container_width=True):
                 st.session_state['logged_in'] = True; st.rerun()
 
-# --- 🚀 4. Main Controller ---
+# --- 🚀 5. Main Controller ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'lang_choice' not in st.session_state:
