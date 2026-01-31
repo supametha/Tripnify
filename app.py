@@ -146,7 +146,7 @@ def main_dashboard():
         st.divider()
         api_key = st.text_input(t["api_label"], type="password")
         use_free_mode = st.toggle(t["free_mode"], value=not api_key)
-        
+
         dark_mode = st.toggle(t["theme_label"], value=False)
         if dark_mode:
             st.markdown("""<style>
@@ -154,12 +154,12 @@ def main_dashboard():
                 [data-testid="stSidebar"] { background-color: #1e293b; }
                 .analysis-box { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155; padding:20px; border-radius:12px; }
                 .shop-card { background: #334155; padding: 15px; border-radius: 10px; border-left: 5px solid #6366f1; margin-bottom: 10px; }
-                </style>""", unsafe_allow_html=True)
+            </style>""", unsafe_allow_html=True)
         else:
             st.markdown("""<style>
                 .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
                 .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }
-                </style>""", unsafe_allow_html=True)
+            </style>""", unsafe_allow_html=True)
 
         if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
@@ -168,59 +168,70 @@ def main_dashboard():
     st.title("🌍 Tripnify Dashboard")
     col1, col2 = st.columns([1, 1.4])
 
+    # ---------- LEFT ----------
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
             country = st.selectbox(t["dest"], list(CITY_DATA.keys()))
             city = st.selectbox(t["city"], CITY_DATA[country])
-            
+
             d_col1, d_col2 = st.columns(2)
             start = d_col1.date_input(t["start_date"], datetime.now())
             end = d_col2.date_input(t["end_date"], datetime.now() + timedelta(days=3))
-            
-            activity = st.multiselect(t["activity_label"], t["activities"], default=t["activities"][0])
-            st.session_state['gender_val'] = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
-            
+
+            activity = st.multiselect(
+                t["activity_label"],
+                t["activities"],
+                default=[t["activities"][0]]
+            )
+
+            st.session_state['gender_val'] = st.radio(
+                t["gender"], [t["male"], t["female"]], horizontal=True
+            )
+
             st.divider()
             st.subheader(t["upload_section"])
             tabs = st.tabs(["📁 คลังภาพ", "📸 ถ่ายภาพ"])
-            with tabs[0]: img_file = st.file_uploader("", type=['jpg','png','jpeg'], key="up_main")
-            with tabs[1]: cam_file = st.camera_input("")
-            
+            with tabs[0]:
+                img_file = st.file_uploader("", type=['jpg','png','jpeg'])
+            with tabs[1]:
+                cam_file = st.camera_input("")
+
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
+    # ---------- RIGHT ----------
     with col2:
         if run_btn:
-           result, is_premium = process_analysis(
-    api_key,
-    city,          # ✅ ตรง
-    country,       # ✅ ตรง
-    activity,
-    use_free_mode,
-    active_img,
-    start,
-    end
-)
+            result, is_premium = process_analysis(
+                api_key,
+                city,
+                country,
+                activity,
+                use_free_mode,
+                active_img,
+                start,
+                end
+            )
 
-            # Weather Widget
+            # Weather
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
             w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-            
+
             st.divider()
-            
-            # 3D Model OR Reference Image
-           st.subheader(t["analysis_title"])
-st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
 
-if is_premium:
-    render_3d_model()
-
-            # Analysis Text
+            # Analysis
             st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
-            
+            st.markdown(
+                f'<div class="analysis-box">{result}</div>',
+                unsafe_allow_html=True
+            )
+
+            # 3D Model (Premium)
+            if is_premium:
+                render_3d_model()
+
             # Shopping
             st.divider()
             st.subheader(t["shop_title"])
@@ -228,11 +239,15 @@ if is_premium:
                 st.markdown(f"""
                     <div class="shop-card">
                         <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}"
+                           target="_blank"
+                           style="text-decoration:none;color:#4f46e5;">
+                           🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง
+                        </a>
                     </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
 
 
 # -------------------------------
