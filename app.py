@@ -184,7 +184,47 @@ def process_analysis(api_key, city, country, activity, free_mode, image, start, 
 
 # -------------------------------
 # --- 🎨 3. หน้า Dashboard ---
-def main_dashboard():
+def main_dashboard():def extract_shopping_items(api_key, analysis_text, free_mode):
+    if free_mode or not api_key:
+        return [
+            {
+                "name": "เสื้อโค้ทกันหนาว",
+                "reason": "ช่วยรักษาอุณหภูมิร่างกาย เหมาะกับอากาศหนาวจัด"
+            },
+            {
+                "name": "Heattech แขนยาว",
+                "reason": "เป็น Layer ด้านใน เก็บความร้อนได้ดี"
+            },
+            {
+                "name": "รองเท้ากันลื่น",
+                "reason": "ลดความเสี่ยงลื่นล้มบนพื้นหิมะ"
+            }
+        ]
+
+    client = OpenAI(api_key=api_key)
+
+    prompt = f"""
+    จากผลวิเคราะห์การแต่งกายต่อไปนี้:
+    {analysis_text}
+
+    สรุปเป็นรายการสินค้าที่ควรซื้อ 3-5 รายการ
+    ตอบเป็น JSON รูปแบบนี้เท่านั้น:
+    [
+      {{
+        "name": "ชื่อสินค้า",
+        "reason": "เหตุผลว่าทำไมเหมาะสม"
+      }}
+    ]
+    """
+
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    import json
+    return json.loads(res.choices[0].message.content)
+
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
