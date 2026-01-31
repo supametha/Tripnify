@@ -142,8 +142,10 @@ def main_dashboard():
         if run_btn:
             v_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
             w_col1, w_col2 = st.columns([1, 2])
-            with w_col1: st.metric(label=t["temp"], value="1.8°C")
-            with w_col2: st.warning(t["warn"])
+            with w_col1: 
+                st.metric(label=t["temp"], value="1.8°C")
+            with w_col2: 
+                st.warning(t["warn"])
             
             st.divider()
             st.markdown(f"### {t['analysis_title']}")
@@ -156,35 +158,34 @@ def main_dashboard():
             st.info("👈 กรุณากรอกข้อมูลและกดเริ่มวิเคราะห์")
 
 # --- 🔑 3. หน้า Login ---
-# --- แก้ไขภายในฟังก์ชัน login_page() ---
-
 def login_page():
-    # ... (ส่วน CSS ด้านบนคงไว้เหมือนเดิม) ...
+    # CSS ปรับแต่งปุ่ม Social ให้ซ้อนทับกันอย่างลงตัว
+    st.markdown("""<style>
+        .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; background-color: transparent !important; border: 1px solid #dadce0 !important; position: relative; z-index: 2; }
+        .social-container { display: flex; align-items: center; justify-content: center; background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -49px; pointer-events: none; position: relative; z-index: 1; }
+        .social-text { color: #3c4043; font-family: sans-serif; font-weight: 500; font-size: 14px; }
+    </style>""", unsafe_allow_html=True)
 
-    # เริ่มส่วนแสดงผลโลโก้กึ่งกลาง
+    # แก้ไขให้โลโก้อยู่กึ่งกลาง
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<center>", unsafe_allow_html=True) # เริ่มการจัดกึ่งกลาง
-    
-    # แทนที่ URL รูปภาพด้วยลิงก์โลโก้ของคุณ
+    st.markdown("<center>", unsafe_allow_html=True) 
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120) 
-    
     st.markdown("<h1 style='margin-bottom: 0;'>Tripnify</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 18px; color: gray;'>จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ</p>", unsafe_allow_html=True)
-    
-    st.markdown("</center>", unsafe_allow_html=True) # ปิดการจัดกึ่งกลาง
+    st.markdown("</center>", unsafe_allow_html=True) 
     st.markdown("---")
-    
-    # ... (ส่วนปุ่ม Login Google/Facebook ด้านล่างคงไว้เหมือนเดิม) ...
     
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     facebook_logo = "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
 
+    # ปุ่ม Google
     st.markdown(f'<div class="social-container"><img src="{google_logo}" width="18px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Google</span></div>', unsafe_allow_html=True)
     if st.button("", use_container_width=True, key="google_login"):
         st.session_state['logged_in'] = True
         st.rerun()
 
     st.write("") 
+    # ปุ่ม Facebook
     st.markdown(f'<div class="social-container"><img src="{facebook_logo}" width="20px" style="margin-right: 12px;"><span class="social-text">เข้าสู่ระบบด้วยบัญชี Facebook</span></div>', unsafe_allow_html=True)
     if st.button("", use_container_width=True, key="fb_login"):
         st.session_state['logged_in'] = True
