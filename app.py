@@ -114,40 +114,55 @@ def main_dashboard():
 
 # --- 🔑 2. หน้า Login ---
 def login_page():
-    # ดึงภาษาปัจจุบัน
+    # ดึงค่าภาษาจาก session state
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    # CSS บังคับกึ่งกลางสมบูรณ์แบบ
+    # CSS บังคับให้ทุกอย่างจัดวางกึ่งกลางสมบูรณ์
     st.markdown("""<style>
-        /* สร้าง Container ให้ทุกอย่างในนี้อยู่กึ่งกลาง */
-        .main-logo-container {
+        /* จัดกลุ่ม Header (Logo + Text) ให้อยู่กึ่งกลางเป๊ะ */
+        .header-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            text-align: center;
             width: 100%;
-            padding: 20px 0;
+            padding-bottom: 20px;
         }
-        .social-btn-container { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
+        /* ตกแต่งปุ่ม Social ให้สวยงามและซ้อนปุ่มจริง */
+        .social-btn-custom {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: -45px;
+            background: white;
+            position: relative;
+            z-index: 1;
+            pointer-events: none;
+            width: 100%;
+        }
         .social-icon { width: 20px; margin-right: 12px; }
         .social-text { font-weight: 500; font-size: 14px; }
     </style>""", unsafe_allow_html=True)
 
-    # 1. ส่วน Logo (บังคับกึ่งกลางด้วย Div)
+    # 1. ส่วน Header: Logo และ ชื่อแบรนด์ (จัดกึ่งกลางสมดุล)
     st.markdown(f"""
-        <div class="main-logo-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="150">
-            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
-            <p style='color: gray; font-size: 1.2rem; margin-top: -10px;'>{t['login_sub']}</p>
+        <div class="header-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
+            <h1 style='margin-top: 15px; font-size: 3.2rem;'>Tripnify</h1>
+            <p style='color: gray; font-size: 1.1rem; margin-top: -10px;'>{t['login_sub']}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # 2. ส่วนปุ่ม Login และฟอร์ม (ใช้ Column ประคองความกว้าง)
-    _, c2, _ = st.columns([1, 1.5, 1])
+    # 2. ส่วนปุ่มกดและฟอร์ม (ใช้ Column ประคองความกว้างให้อยู่ตรงกลางจอ)
+    _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
-        # ปุ่ม Social ภาษาไทย
-        st.markdown(f"""<div class="social-btn-container">
+        # ปุ่ม Facebook ภาษาไทย
+        st.markdown("""<div class="social-btn-custom">
             <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
             <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
         </div>""", unsafe_allow_html=True)
@@ -155,7 +170,8 @@ def login_page():
             st.session_state['logged_in'] = True
             st.rerun()
 
-        st.markdown(f"""<div class="social-btn-container">
+        # ปุ่ม Google ภาษาไทย
+        st.markdown("""<div class="social-btn-custom">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
             <span class="social-text" style="color: #5F6368;">เข้าสู่ระบบด้วย Google</span>
         </div>""", unsafe_allow_html=True)
@@ -163,17 +179,18 @@ def login_page():
             st.session_state['logged_in'] = True
             st.rerun()
 
-        st.markdown("<hr style='margin-top: 25px; opacity: 0.2;'>", unsafe_allow_html=True)
-        
-        # ฟอร์มปกติ (จัดเรียง Indent ให้ถูกต้องป้องกัน Error 132/159)
+        st.markdown("<hr style='margin-top: 25px; opacity: 0.3;'>", unsafe_allow_html=True)
+
+        # ฟอร์ม Username/Password (จัดย่อหน้าให้ถูกต้องเพื่อแก้ปัญหา IndentationError)
         user = st.text_input("Username / ชื่อผู้ใช้งาน", placeholder="Username")
         pwd = st.text_input("Password / รหัสผ่าน", type="password", placeholder="Password")
-        
+
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
             if user:
                 st.session_state['logged_in'] = True
                 st.rerun()
-        
+
+        # ปุ่ม สมัครสมาชิก / ทดลองใช้
         col_sub1, col_sub2 = st.columns(2)
         with col_sub1:
             st.button(t["reg_btn"], use_container_width=True)
