@@ -118,12 +118,16 @@ def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    st.markdown("""<style>
-        .login-box { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .social-btn { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 8px; margin-bottom: 10px; background: white; cursor: pointer; transition: 0.3s; }
-        .social-btn:hover { background-color: #f8f9fa; }
-        .social-icon { width: 20px; margin-right: 12px; }
-    </style>""", unsafe_allow_html=True)
+    # แก้ไขบรรทัดที่ 105-110 (โดยประมาณ)
+st.markdown("<br>", unsafe_allow_html=True)
+col_logo, col_mid, col_logo2 = st.columns([1, 1, 1])
+with col_mid:
+    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
+
+st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+st.markdown(f"<h1>{t['login_title']}</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='color: gray;'>{t['login_sub']}</p>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='login-box'>", unsafe_allow_html=True)
     st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=100)
@@ -133,14 +137,22 @@ def login_page():
 
     c1, c2, c3 = st.columns([1, 1.5, 1])
     with c2:
-        # Facebook Login Button
-        st.markdown(f"""<div class="social-btn">
-            <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
-            <span style="color: #1877F2; font-weight: bold;">Continue with Facebook</span>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Facebook Login", key="fb_hidden", help="เข้าสู่ระบบผ่าน Facebook", use_container_width=True): 
-            st.session_state['logged_in'] = True; st.rerun()
+       with c2:
+    # ปุ่ม Facebook ภาษาไทย
+    st.markdown(f"""<div class="social-btn">
+        <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
+        <span style="color: #1877F2; font-weight: bold;">เข้าสู่ระบบด้วย Facebook</span>
+    </div>""", unsafe_allow_html=True)
+    if st.button("Facebook Login", key="fb_hidden", label_visibility="collapsed", use_container_width=True): 
+        st.session_state['logged_in'] = True; st.rerun()
 
+    # ปุ่ม Google ภาษาไทย
+    st.markdown(f"""<div class="social-btn">
+        <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
+        <span style="color: #5F6368; font-weight: bold;">เข้าสู่ระบบด้วย Google</span>
+    </div>""", unsafe_allow_html=True)
+    if st.button("Google Login", key="google_hidden", label_visibility="collapsed", use_container_width=True): 
+        st.session_state['logged_in'] = True; st.rerun()
         # Google Login Button
         st.markdown(f"""<div class="social-btn">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
