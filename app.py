@@ -62,36 +62,25 @@ CITY_DATA = {
     "ไต้หวัน": ["ไทเป", "เกาสง"],
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
+import streamlit as st
+from datetime import datetime, timedelta
 
-# --- 🎨 1. หน้า Dashboard ---
+# --- 🎨 1. หน้า Dashboard (ปรับปรุงส่วนอัพโหลด/ถ่ายรูป) ---
 def main_dashboard():
-    # ตรวจสอบภาษาปัจจุบัน
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
     with st.sidebar:
         st.subheader(t["settings"])
-        # ส่วนปรับภาษาที่รองรับทั้ง 2 โหมด
-        st.radio("Select Language / เลือกภาษา", ["Thai", "English"], key='lang_choice', horizontal=True)
-        
-        st.divider()
-        # ปรับปรุงส่วน OpenAI API Key
-        api_key = st.text_input(t["api_label"], type="password", help="กรอก API Key จาก OpenAI เพื่อใช้งานระบบวิเคราะห์ขั้นสูงและ 3D")
+        st.radio("Select Language", ["Thai", "English"], key='lang_choice', horizontal=True)
+        api_key = st.text_input(t["api_label"], type="password")
         use_free_mode = st.toggle(t["free_mode"], value=not api_key)
         
-        theme_mode = st.toggle(t["theme_label"], value=False)
-        if theme_mode:
-            st.markdown("""<style>
-                .stApp { background-color: #0F172A; color: #FFFFFF; }
-                .stMarkdown, p, h1, h2, h3, label { color: #F1F5F9 !important; }
-                [data-testid="stSidebar"] { background-color: #1E293B; }
-            </style>""", unsafe_allow_html=True)
-
         if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
             st.rerun()
 
-    st.title(f"🌍 Tripnify Dashboard")
+    st.title("🌍 Tripnify Dashboard")
     
     col1, col2 = st.columns([1, 1.4])
     with col1:
@@ -100,27 +89,30 @@ def main_dashboard():
             country = st.selectbox(t["dest"], list(CITY_DATA.keys()))
             city = st.selectbox(t["city"], CITY_DATA[country])
             
-            d_col1, d_col2 = st.columns(2)
-            start_date = d_col1.date_input(t["start"], datetime.now())
-            end_date = d_col2.date_input(t["end"], datetime.now() + timedelta(days=5))
+            # ส่วนการจัดการรูปภาพ (อัพโหลด + ถ่ายรูป)
+            st.write(f"**{t['upload_tab']}**")
+            input_tab1, input_tab2 = st.tabs(["📁 คลังภาพ", "📸 กล้องถ่ายรูป"])
             
-            gender = st.radio(t["gender"], ["Male/ชาย", "Female/หญิง"], horizontal=True)
+            with input_tab1:
+                img_file = st.file_uploader("เลือกไฟล์ภาพจากเครื่อง", type=['jpg', 'png', 'jpeg'])
+            with input_tab2:
+                cam_file = st.camera_input("ถ่ายรูปชุดของคุณ")
             
-            tabs = st.tabs([t["upload_tab"], t["camera_tab"]])
-            with tabs[0]: img_file = st.file_uploader("", type=['jpg', 'png'])
-            with tabs[1]: cam_file = st.camera_input("")
+            # รวมไฟล์ภาพจากทั้ง 2 ช่องทาง
+            active_img = img_file if img_file else cam_file
             
-            st.button(t["run_btn"], use_container_width=True, type="primary")
+            if st.button(t["run_btn"], use_container_width=True, type="primary"):
+                if active_img:
+                    st.success("รับข้อมูลภาพเรียบร้อย กำลังเริ่มวิเคราะห์...")
+                else:
+                    st.warning("กรุณาอัพโหลดรูปหรือถ่ายภาพก่อนเริ่มวิเคราะห์")
 
-# --- 🔑 2. หน้า Login ---
+# --- 🔑 2. หน้า Login (ปรับโลโก้กึ่งกลางสมดุล) ---
 def login_page():
-    # ดึงค่าภาษาจาก session state
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    # CSS บังคับให้ทุกอย่างจัดวางกึ่งกลางสมบูรณ์
     st.markdown("""<style>
-        /* จัดกลุ่ม Header (Logo + Text) ให้อยู่กึ่งกลางเป๊ะ */
         .header-container {
             display: flex;
             flex-direction: column;
@@ -128,9 +120,8 @@ def login_page():
             justify-content: center;
             text-align: center;
             width: 100%;
-            padding-bottom: 20px;
+            padding: 30px 0;
         }
-        /* ตกแต่งปุ่ม Social ให้สวยงามและซ้อนปุ่มจริง */
         .social-btn-custom {
             display: flex;
             align-items: center;
@@ -149,55 +140,46 @@ def login_page():
         .social-text { font-weight: 500; font-size: 14px; }
     </style>""", unsafe_allow_html=True)
 
-    # 1. ส่วน Header: Logo และ ชื่อแบรนด์ (จัดกึ่งกลางสมดุล)
+    # จัดโลโก้และชื่อแบรนด์กึ่งกลาง (ตัดคำว่าเข้าสู่ระบบออก)
     st.markdown(f"""
         <div class="header-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
-            <h1 style='margin-top: 15px; font-size: 3.2rem;'>Tripnify</h1>
-            <p style='color: gray; font-size: 1.1rem; margin-top: -10px;'>{t['login_sub']}</p>
+            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="140">
+            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
+            <p style='color: gray; font-size: 1.2rem; margin-top: -15px;'>{t['login_sub']}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # 2. ส่วนปุ่มกดและฟอร์ม (ใช้ Column ประคองความกว้างให้อยู่ตรงกลางจอ)
     _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
-        # ปุ่ม Facebook ภาษาไทย
+        # Facebook
         st.markdown("""<div class="social-btn-custom">
             <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
             <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
         </div>""", unsafe_allow_html=True)
         if st.button("", key="fb_btn", use_container_width=True):
-            st.session_state['logged_in'] = True
-            st.rerun()
+            st.session_state['logged_in'] = True; st.rerun()
 
-        # ปุ่ม Google ภาษาไทย
+        # Google
         st.markdown("""<div class="social-btn-custom">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
             <span class="social-text" style="color: #5F6368;">เข้าสู่ระบบด้วย Google</span>
         </div>""", unsafe_allow_html=True)
         if st.button("", key="google_btn", use_container_width=True):
-            st.session_state['logged_in'] = True
-            st.rerun()
+            st.session_state['logged_in'] = True; st.rerun()
 
         st.markdown("<hr style='margin-top: 25px; opacity: 0.3;'>", unsafe_allow_html=True)
-
-        # ฟอร์ม Username/Password (จัดย่อหน้าให้ถูกต้องเพื่อแก้ปัญหา IndentationError)
-        user = st.text_input("Username / ชื่อผู้ใช้งาน", placeholder="Username")
-        pwd = st.text_input("Password / รหัสผ่าน", type="password", placeholder="Password")
-
+        
+        user = st.text_input("Username", placeholder="Username")
+        pwd = st.text_input("Password", type="password", placeholder="Password")
+        
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
-            if user:
-                st.session_state['logged_in'] = True
-                st.rerun()
+            st.session_state['logged_in'] = True; st.rerun()
 
-        # ปุ่ม สมัครสมาชิก / ทดลองใช้
         col_sub1, col_sub2 = st.columns(2)
-        with col_sub1:
-            st.button(t["reg_btn"], use_container_width=True)
+        with col_sub1: st.button(t["reg_btn"], use_container_width=True)
         with col_sub2:
             if st.button(t["guest_btn"], use_container_width=True):
-                st.session_state['logged_in'] = True
-                st.rerun()
+                st.session_state['logged_in'] = True; st.rerun()
 
 # --- 🚀 3. ส่วนควบคุมหลัก ---
 if 'logged_in' not in st.session_state:
