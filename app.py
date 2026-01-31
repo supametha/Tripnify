@@ -143,25 +143,18 @@ def main_dashboard():
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
-            country = st.selectbox(t["dest"], ["Japan", "Korea", "Vietnam", "Taiwan", "China"] if lang=="English" else ["ญี่ปุ่น", "เกาหลีใต้", "เวียดนาม", "ไต้หวัน", "จีน"])
-            
-            d_col1, d_col2 = st.columns(2)
-            start_date = d_col1.date_input(t["start"], datetime.now())
-            end_date = d_col2.date_input(t["end"], datetime.now() + timedelta(days=5))
-            
-            activity = st.selectbox(t["activity"], ["Photography", "Ski/Snow", "Business", "Hiking", "Shopping"] if lang=="English" else ["ท่องเที่ยวถ่ายรูป", "เล่นสกี/กิจกรรมหิมะ", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ช้อปปิ้งในเมือง"])
-            gender = st.radio(t["gender"], [t["male"], t["female"]])
-            
-            img_file = st.file_uploader(t["upload"], type=['jpg', 'png', 'jpeg'])
-            camera_file = st.camera_input(t["camera"])
-            if camera_file: img_file = camera_file
-                
-            run_btn = st.button(t["run"], use_container_width=True)
+            # --- แก้ไขบรรทัดที่ 165 เป็นต้นไป ในฟังก์ชัน login_page ---
 
-    with col2:
-        if run_btn:
-            v_out, r_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
-            st.markdown(f"### 📍 {t['dest']}: {country}")
+    # 1. แสดงโลโก้ใหม่และชื่อแอปให้สวยขึ้น
+    col_logo, col_text = st.columns([1, 4])
+    with col_logo:
+        # ใส่ URL รูปโลโก้ที่คุณเลือก (ตัวอย่างนี้ใช้รูปที่คุณอัปโหลดล่าสุด)
+        st.image("https://path-to-your-logo/tripnify_logo.png", width=80) 
+    with col_text:
+        st.markdown("<h1 style='margin-top: -10px;'>Tripnify</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 18px; color: gray;'>จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ</p>", unsafe_allow_html=True)
+    
+    st.markdown("---")
             
             w_col1, w_col2 = st.columns([1, 2])
             with w_col1: st.metric(label=t["temp"], value="1.8°C")
