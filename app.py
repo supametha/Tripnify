@@ -118,33 +118,35 @@ def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    # CSS สำหรับจัดปุ่ม Social และปรับแต่งหน้าตา
+    # CSS สำหรับจัดวางองค์ประกอบให้สวยงามและกึ่งกลาง
     st.markdown("""<style>
-        .login-container { text-align: center; margin-bottom: 20px; }
-        .social-btn { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; }
+        /* จัดข้อความให้อยู่กึ่งกลาง */
+        .centered-container { text-align: center; margin-bottom: 20px; width: 100%; }
+        /* ปรับแต่งปุ่ม Social */
+        .social-btn-container { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
         .social-icon { width: 20px; margin-right: 12px; }
         .social-text { font-weight: 500; font-size: 14px; }
     </style>""", unsafe_allow_html=True)
 
-    # 1. ส่วนโลโก้และหัวข้อ (จัดกึ่งกลาง)
+    # 1. ส่วน Logo และ ชื่อ Tripnify (จัดกึ่งกลางและตัดคำว่า "เข้าสู่ระบบ" ออก)
     st.markdown("<br>", unsafe_allow_html=True)
-    col_l, col_mid, col_r = st.columns([1, 1, 1])
+    col_l, col_mid, col_r = st.columns([1, 1.2, 1])
     with col_mid:
-        # ใช้รูปโลโก้ของคุณ (เปลี่ยน URL ได้ตามต้องการ)
+        # ใช้รูป Logo จากไฟล์ที่คุณอัปโหลด
         st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
     
     st.markdown(f"""
-        <div class="login-container">
-            <h1 style='margin-top: 0;'>{t['login_title']}</h1>
-            <p style='color: gray;'>{t['login_sub']}</p>
+        <div class="centered-container">
+            <h1 style='margin-top: 10px; font-size: 3rem;'>Tripnify</h1>
+            <p style='color: gray; font-size: 1.1rem;'>{t['login_sub']}</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # 2. ส่วนปุ่มเข้าสู่ระบบ
+    # 2. ส่วนปุ่ม Login และฟอร์ม (จัดวางกึ่งกลางหน้าจอ)
     _, c2, _ = st.columns([1, 1.5, 1])
     with c2:
-        # ปุ่ม Facebook (ภาษาไทย + Logo)
-        st.markdown(f"""<div class="social-btn">
+        # ปุ่ม Facebook (ภาษาไทย)
+        st.markdown(f"""<div class="social-btn-container">
             <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
             <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
         </div>""", unsafe_allow_html=True)
@@ -152,8 +154,8 @@ def login_page():
             st.session_state['logged_in'] = True
             st.rerun()
 
-        # ปุ่ม Google (ภาษาไทย + Logo)
-        st.markdown(f"""<div class="social-btn">
+        # ปุ่ม Google (ภาษาไทย)
+        st.markdown(f"""<div class="social-btn-container">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
             <span class="social-text" style="color: #5F6368;">เข้าสู่ระบบด้วย Google</span>
         </div>""", unsafe_allow_html=True)
@@ -161,9 +163,9 @@ def login_page():
             st.session_state['logged_in'] = True
             st.rerun()
 
-        st.markdown("<hr style='margin-top: 25px;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin-top: 25px; opacity: 0.3;'>", unsafe_allow_html=True)
         
-        # ฟอร์ม Login ปกติ
+        # ฟอร์มกรอกข้อมูลปกติ
         user = st.text_input("Username / ชื่อผู้ใช้งาน", placeholder="กรอกชื่อผู้ใช้งาน")
         pwd = st.text_input("Password / รหัสผ่าน", type="password", placeholder="กรอกรหัสผ่าน")
         
@@ -172,7 +174,7 @@ def login_page():
                 st.session_state['logged_in'] = True
                 st.rerun()
         
-        # ปุ่มลงทะเบียนและทดลองใช้ (จัดเรียงใหม่ให้สวยงาม)
+        # ปุ่มเสริมด้านล่าง
         col_sub1, col_sub2 = st.columns(2)
         with col_sub1:
             if st.button(t["reg_btn"], use_container_width=True):
