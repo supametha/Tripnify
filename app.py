@@ -109,6 +109,54 @@ def render_3d_model():
 # ⚙️ Analysis Logic
 # -------------------------------
 def process_analysis(api_key, city, country, activity, free_mode, image, start, end):
+ def extract_shopping_items(api_key, analysis_text, free_mode):
+    """
+    ดึงรายการสินค้า + เหตุผล จากผลวิเคราะห์การแต่งกาย
+    """
+    if free_mode or not api_key:
+        # fallback สำหรับ free mode
+        return [
+            {
+                "name": "เสื้อโค้ทกันหนาว",
+                "reason": "ช่วยป้องกันอุณหภูมิต่ำและลมแรง เหมาะกับสภาพอากาศหนาว"
+            },
+            {
+                "name": "Heattech แขนยาว",
+                "reason": "เป็น layer ด้านใน เก็บความร้อนได้ดี"
+            },
+            {
+                "name": "รองเท้ากันลื่น",
+                "reason": "ลดความเสี่ยงลื่นล้มในพื้นที่มีหิมะ"
+            }
+        ]
+
+    client = OpenAI(api_key=api_key)
+
+    prompt = f"""
+    จากผลวิเคราะห์การแต่งกายต่อไปนี้:
+    {analysis_text}
+
+    ช่วยสรุปเป็นรายการสินค้าที่ควรซื้อ 3-5 รายการ
+    โดยตอบเป็น JSON รูปแบบนี้เท่านั้น:
+
+    [
+      {{
+        "name": "ชื่อสินค้า",
+        "reason": "เหตุผลว่าทำไมเหมาะสม"
+      }}
+    ]
+
+    ตอบเป็นภาษาไทย
+    """
+
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    import json
+    return json.loads(res.choices[0].message.content)
+   
     days = (end - start).days + 1
     if api_key and not free_mode and image:
         client = OpenAI(api_key=api_key)
@@ -235,19 +283,33 @@ def main_dashboard():
             # Shopping
             st.divider()
             st.subheader(t["shop_title"])
-            for item in t["essentials"]:
-                st.markdown(f"""
-                    <div class="shop-card">
-                        <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}"
-                           target="_blank"
-                           style="text-decoration:none;color:#4f46e5;">
-                           🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง
-                        </a>
-                    </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
+          # --- Shopping Recommendation ---
+shopping_items = extract_shopping_items(
+    api_key,
+    result,
+    use_free_mode
+)
+
+st.subheader(t["shop_title"])
+
+for item in shopping_items:
+    st.markdown(f"""
+        <div class="shop-card">
+            <strong>🧥 {item['name']}</strong><br>
+            <small>{item['reason']}</small>
+            <hr style="opacity:0.3;">
+            <div style="display:flex; gap:15px;">
+    """, unsafe_allow_html=True)
+
+    for platform, data in SHOP_PLATFORMS.items():
+        search_url = data["url"] + quote_plus(item["name"])
+        st.markdown(f"""
+            <a href="{search_url}" target="_blank">
+                <img src="{data['icon']}" style="height:30px;">
+            </a>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 # -------------------------------
