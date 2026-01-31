@@ -5,9 +5,9 @@ from urllib.parse import quote_plus
 from datetime import datetime, timedelta
 import streamlit.components.v1 as components
 
-# =====================================================
-# 🌐 0. LANGUAGE SYSTEM
-# =====================================================
+# -------------------------------
+# 🌐 Language
+# -------------------------------
 LANG_DATA = {
     "Thai": {
         "settings": "⚙️ ตั้งค่าระบบ",
@@ -32,32 +32,54 @@ LANG_DATA = {
         "analysis_title": "🔍 ผลวิเคราะห์การแต่งกาย",
         "shop_title": "🛍️ แหล่งช้อปปิ้งแนะนำ",
         "login_sub": "ระบบวิเคราะห์การแต่งกายอัจฉริยะเพื่อการเดินทาง",
+        "login_btn": "🔑 เข้าสู่ระบบ",
+        "reg_btn": "📝 ลงทะเบียน",
+        "guest_btn": "👤 ทดลองใช้",
     }
 }
 
 CITY_DATA = {
     "ญี่ปุ่น": ["โตเกียว", "โอซาก้า", "ฮอกไกโด"],
-    "เกาหลีใต้": ["โซล", "ปูซาน", "เชจู"]
+    "เกาหลีใต้": ["โซล", "ปูซาน"],
 }
 
-# =====================================================
-# 🎭 1. 3D MODEL (PREMIUM)
-# =====================================================
+# -------------------------------
+# 🎭 3D Model (Premium)
+# -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
     components.html("""
-    <div style="width:100%;height:380px;background:#0f172a;
-    border-radius:20px;display:flex;align-items:center;justify-content:center;">
-        <div style="font-size:150px;">🧥</div>
-    </div>
-    """, height=400)
+        <div id="viewer-3d" style="width:100%;height:400px;
+        background:radial-gradient(circle,#334155 0%,#0f172a 100%);
+        border-radius:20px;display:flex;align-items:center;justify-content:center;
+        position:relative;cursor:grab;border:2px solid #6366f1;">
+            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
+            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
+                [ ลากเพื่อหมุนดูชุด 360° ]
+            </div>
+        </div>
+        <script>
+            const el=document.getElementById('viewer-3d');
+            const char=document.getElementById('character');
+            let drag=false,rot=0,startX=0;
+            el.onmousedown=e=>{drag=true;startX=e.pageX;};
+            window.onmouseup=()=>drag=false;
+            window.onmousemove=e=>{
+                if(!drag)return;
+                const d=e.pageX-startX;
+                rot+=d*0.5;
+                char.style.transform=`rotateY(${rot}deg)`;
+                startX=e.pageX;
+            };
+        </script>
+    """, height=420)
 
-# =====================================================
-# ⚙️ 2. AI ANALYSIS
-# =====================================================
-def process_analysis(api_key, country, city, activity, use_free, image, lang, start, end):
+# -------------------------------
+# ⚙️ Analysis Logic
+# -------------------------------
+def process_analysis(api_key, city, country, activity, free_mode, image, start, end):
     days = (end - start).days + 1
-    if api_key and not use_free and image:
+    if api_key and not free_mode and image:
         client = OpenAI(api_key=api_key)
         b64 = base64.b64encode(image.getvalue()).decode()
         prompt = f"""
@@ -81,31 +103,28 @@ def process_analysis(api_key, country, city, activity, use_free, image, lang, st
 
     return "แนะนำแต่งกายแบบ Layering: Heattech + เสื้อไหมพรม + เสื้อโค้ทกันหนาว", False
 
-# =====================================================
-# 🧠 3. EXTRACT ITEMS
-# =====================================================
-def extract_items():
-    return [
-        {"name": "เสื้อโค้ทกันหนาว", "reason": "ป้องกันลมและอุณหภูมิต่ำ"},
-        {"name": "เสื้อ Heattech", "reason": "ช่วยเก็บความร้อนใกล้ลำตัว"},
-        {"name": "ถุงมือกันหนาว", "reason": "ลดการสูญเสียความร้อนที่มือ"},
-        {"name": "รองเท้าบูทกันหนาว", "reason": "เดินบนหิมะได้ปลอดภัย"}
-    ]
-
-# =====================================================
-# 🎨 4. DASHBOARD
-# =====================================================
+# -------------------------------
+# 🎨 Dashboard
+# -------------------------------
 def main_dashboard():
     t = LANG_DATA["Thai"]
 
+    # Sidebar (ใช้จาก code ที่ให้มา)
     with st.sidebar:
         st.subheader(t["settings"])
+        st.radio(t["lang_label"], ["Thai"], horizontal=True)
+        st.divider()
         api_key = st.text_input(t["api_label"], type="password")
         free_mode = st.toggle(t["free_mode"], value=not api_key)
+        dark = st.toggle(t["theme_label"], value=False)
+
+        if st.button(t["logout"], use_container_width=True):
+            st.session_state['logged_in'] = False
+            st.rerun()
 
     st.title("🌍 Tripnify Dashboard")
 
-    col1, col2 = st.columns([1, 1.5])
+    col1, col2 = st.columns([1, 1.4])
 
     with col1:
         country = st.selectbox(t["dest"], CITY_DATA.keys())
@@ -119,44 +138,19 @@ def main_dashboard():
     with col2:
         if run:
             result, is_premium = process_analysis(
-                api_key, country, city, activity, free_mode, img, "Thai", start, end
+                api_key, city, country, activity, free_mode, img, start, end
             )
 
-            # 🔍 ANALYSIS FIRST
+            # Weather
+            st.metric(t["temp_label"], "2°C")
+            st.warning(f"❄️ อากาศหนาวใน {city}")
+            st.divider()
+
+            # 🔍 Analysis FIRST
             st.subheader(t["analysis_title"])
             st.markdown(f"<div class='analysis-box'>{result}</div>", unsafe_allow_html=True)
 
-            # 🧾 ITEMS
-            st.divider()
-            st.subheader("🧾 สินค้าที่แนะนำ")
-            items = extract_items()
-            for item in items:
-                with st.expander(f"🧥 {item['name']}"):
-                    st.write(item["reason"])
-
-            # 🛍️ SHOPPING
-            st.divider()
-            st.subheader(t["shop_title"])
-            shops = [
-                ("Shopee", "https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee.svg",
-                 "https://shopee.co.th/search?keyword="),
-                ("Uniqlo", "https://upload.wikimedia.org/wikipedia/commons/9/92/UNIQLO_logo.svg",
-                 "https://www.uniqlo.com/th/th/search?q="),
-                ("Lazada", "https://upload.wikimedia.org/wikipedia/commons/4/45/Lazada_logo.svg",
-                 "https://www.lazada.co.th/catalog/?q=")
-            ]
-
-            for item in items:
-                cols = st.columns(3)
-                for col, shop in zip(cols, shops):
-                    with col:
-                        st.markdown(f"""
-                        <a href="{shop[2]}{quote_plus(item['name'])}" target="_blank">
-                            <img src="{shop[1]}" width="80"><br>{shop[0]}
-                        </a>
-                        """, unsafe_allow_html=True)
-
-            # 🎭 3D / IMAGE LAST
+            # 🎭 3D ต่อจากผลวิเคราะห์
             st.divider()
             if is_premium:
                 render_3d_model()
@@ -166,10 +160,50 @@ def main_dashboard():
                     caption="Reference Outfit (Free Mode)"
                 )
 
-# =====================================================
-# 🚀 MAIN
-# =====================================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = True
+            # 🛍️ Shopping
+            st.divider()
+            st.subheader(t["shop_title"])
+            for item in ["เสื้อโค้ทกันหนาว","ถุงมือกันหนาว","รองเท้าบูทกันหนาว"]:
+                st.markdown(f"""
+                <div class="shop-card">
+                    🔹 {item}<br>
+                    <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank">
+                        คลิกเพื่อค้นหาสินค้า
+                    </a>
+                </div>
+                """, unsafe_allow_html=True)
 
-main_dashboard()
+        else:
+            st.info("👈 กรอกข้อมูลแล้วกดเริ่มวิเคราะห์")
+
+# -------------------------------
+# 🔑 Login Page (ใช้จาก code ที่ให้มา)
+# -------------------------------
+def login_page():
+    t = LANG_DATA["Thai"]
+    st.markdown(f"""
+    <div style="text-align:center;padding:40px">
+        <h1 style="font-size:3rem">Tripnify</h1>
+        <p>{t['login_sub']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    _, c, _ = st.columns([1,1.5,1])
+    with c:
+        if st.button(t["login_btn"], use_container_width=True, type="primary"):
+            st.session_state['logged_in'] = True
+            st.rerun()
+        if st.button(t["guest_btn"], use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
+
+# -------------------------------
+# 🚀 Main
+# -------------------------------
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+if st.session_state['logged_in']:
+    main_dashboard()
+else:
+    login_page()
