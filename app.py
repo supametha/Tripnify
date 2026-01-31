@@ -192,8 +192,17 @@ def main_dashboard():
 
     with col2:
         if run_btn:
-            result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
-            
+           result, is_premium = process_analysis(
+    api_key,
+    city,          # ✅ ตรง
+    country,       # ✅ ตรง
+    activity,
+    use_free_mode,
+    active_img,
+    start,
+    end
+)
+
             # Weather Widget
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
@@ -202,10 +211,11 @@ def main_dashboard():
             st.divider()
             
             # 3D Model OR Reference Image
-            if is_premium:
-                render_3d_model()
-            else:
-                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
+           st.subheader(t["analysis_title"])
+st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
+
+if is_premium:
+    render_3d_model()
 
             # Analysis Text
             st.subheader(t["analysis_title"])
