@@ -175,27 +175,37 @@ def main_dashboard():
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
-    with col2:
+   with col2:
         if run_btn:
             result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
             
-            # Weather Widget
-            w_col1, w_col2 = st.columns([1, 2])
+            # --- [1] Weather Widget ---
+            w_col1, w_col2 = st.columns([1,2])
             w_col1.metric(t["temp_label"], "2°C")
-            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-            
+            w_col2.warning(f"❄️สภาพอากาศหนาวจัดใน {city}")
             st.divider()
             
-            # 3D Model OR Reference Image
+            # --- [2] ผลวิเคราะห์การแต่งกาย (ย้ายขึ้นมาไว้ก่อน 3D) ---
+            st.subheader(t["analysis_title"])
+            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
+            st.divider()
+
+            # --- [3] 3D Model OR Reference Image ---
             if is_premium:
                 render_3d_model()
             else:
                 st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
-
-            # Analysis Text
-            st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
             
+            # --- [4] Shopping Section ---
+            st.divider()
+            st.subheader(t["shop_title"])
+            for item in t["essentials"]:
+                st.markdown(f"""
+                    <div class="shop-card">
+                        <strong>🔹 {item}</strong><br>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
+                    </div>
+                """, unsafe_allow_html=True)
             # Shopping
             st.divider()
             st.subheader(t["shop_title"])
