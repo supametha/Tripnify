@@ -28,11 +28,12 @@ LANG_DATA = {
         "run_btn": "✨ เริ่มวิเคราะห์ชุดแต่งกาย",
         "temp_label": "🌡️ อุณหภูมิเฉลี่ย",
         "analysis_title": "🔍 ผลวิเคราะห์การแต่งกาย",
-        "shop_title": "🛍️ แหล่งช้อปปิ้งแนะนำ (อ้างอิงจาก AI)",
+        "shop_title": "🛍️ แหล่งช้อปปิ้งแนะนำ",
         "login_sub": "ระบบวิเคราะห์การแต่งกายอัจฉริยะเพื่อการเดินทาง",
         "login_btn": "🔑 เข้าสู่ระบบ",
         "reg_btn": "📝 ลงทะเบียน",
         "guest_btn": "👤 ทดลองใช้",
+        "essentials": ["เสื้อโค้ทกันหนาว", "กางเกงบุขน", "ถุงมือกันหนาว", "แผ่นแปะความร้อน"]
     },
     "English": {
         "settings": "⚙️ System Settings",
@@ -60,6 +61,7 @@ LANG_DATA = {
         "login_btn": "🔑 Login",
         "reg_btn": "📝 Register",
         "guest_btn": "👤 Guest",
+        "essentials": ["Winter Coat", "Fleece Pants", "Winter Gloves", "Heat Packs"]
     }
 }
 
@@ -77,9 +79,7 @@ def render_3d_model():
     components.html("""
         <div id="viewer-3d" style="width: 100%; height: 400px; background: radial-gradient(circle, #334155 0%, #0f172a 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; cursor: grab; border: 2px solid #6366f1;">
             <div id="character" style="font-size: 150px; transition: transform 0.1s linear; user-select: none;">🧥</div>
-            <div style="position: absolute; bottom: 20px; color: #94a3b8; font-family: sans-serif; font-size: 12px; pointer-events: none;">
-                [ ลากเพื่อหมุนดูชุดรอบตัว 360° ]
-            </div>
+            <div style="position: absolute; bottom: 20px; color: #94a3b8; font-family: sans-serif; font-size: 12px; pointer-events: none;">[ ลากเพื่อหมุนดูชุดรอบตัว 360° ]</div>
         </div>
         <script>
             const el = document.getElementById('viewer-3d');
@@ -97,25 +97,40 @@ def render_3d_model():
         </script>
     """, height=420)
 
-# --- ⚙️ 2. ระบบวิเคราะห์ Logic ---
-def process_analysis(api_key, country, city, activity, use_free_mode, lang):
-    # จำลองการดึงข้อมูลจาก AI (ในระบบจริงจะใช้ openai.ChatCompletion)
+# --- ⚙️ 2. แก้ไขบรรทัดที่ 90 เป็นต้นไป (process_analysis) ---
+def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
     if api_key and not use_free_mode:
-        analysis_text = f"สำหรับการเดินทางไป {city}, {country} เพื่อทำกิจกรรม {', '.join(activity)} แนะนำให้สวมใส่เสื้อผ้าที่เน้นการเก็บความร้อนและกันลม"
-        items = [
-            {"name": "Ultra Warm Heattech", "reason": "รักษาอุณหภูมิร่างกายชั้นในสุดได้ดีเยี่ยมในสภาพอากาศเลขตัวเดียว"},
-            {"name": "Seamless Down Parka", "reason": "กันลมและละอองน้ำได้ดี เหมาะกับกิจกรรม {activity[0] if activity else ''}"},
-            {"name": "Heattech Gloves", "reason": "ป้องกันปลายนิ้วชาขณะถ่ายรูปหรือใช้งานมือถือ"}
-        ]
-        return {"analysis": analysis_text, "items": items}, True
+        try:
+            client = OpenAI(api_key=api_key)
+            # ปรับ Prompt สั่ง AI ให้ตอบแยกส่วน
+            prompt = f"Analyze outfit for {city}, {country}. Activity: {activity}. Respond in {lang}. Then, list 3 specific essential items for this trip with a reason for each."
+            
+            # ตรวจสอบการอัปโหลดไฟล์
+            if uploaded_file:
+                b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
+                )
+                analysis_text = response.choices[0].message.content
+            else:
+                # กรณีไม่ได้อัปโหลดรูปแต่ใส่ API Key
+                analysis_text = f"การวิเคราะห์พื้นฐานสำหรับ {city}: ควรเน้นการแต่งกายที่เหมาะสมกับกิจกรรม {activity}"
+
+            # จุดสำคัญ: คืนค่าเป็น Dictionary เพื่อเอาไปวนลูปสร้างปุ่มช้อปปิ้ง
+            items = [
+                {"name": "Ultra Warm Heattech", "reason": "ช่วยรักษาอุณหภูมิร่างกายชั้นในสุดได้ดีเยี่ยม"},
+                {"name": "Seamless Down Parka", "reason": "กันลมและละอองน้ำได้ดี เหมาะกับกิจกรรมกลางแจ้ง"},
+                {"name": "Heattech Gloves", "reason": "ป้องกันปลายนิ้วชาขณะถ่ายรูปหรือใช้งานมือถือ"}
+            ]
+            return {"analysis": analysis_text, "items": items}, True
+        except Exception as e:
+            return {"analysis": f"Error: {e}", "items": []}, False
     else:
-        # โหมดทดลองใช้
-        analysis_text = "คำแนะนำเบื้องต้น: ควรแต่งกายแบบเลเยอร์ 3 ชั้น (Base, Mid, Outer) เพื่อปรับเปลี่ยนตามอุณหภูมิได้ง่าย"
-        items = [
-            {"name": "เสื้อโค้ทกันหนาว", "reason": "เป็นไอเทมพื้นฐานที่ช่วยกันหนาวและเพิ่มความดูดีในการถ่ายรูป"},
-            {"name": "แผ่นแปะความร้อน (Kairo)", "reason": "พกพาสะดวก ช่วยให้ความอบอุ่นเฉพาะจุดได้ทันที"}
-        ]
-        return {"analysis": analysis_text, "items": items}, False
+        # โหมดใช้งานฟรี
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
+        items_free = [{"name": "เสื้อโค้ทกันหนาว", "reason": "พื้นฐานสำคัญสำหรับกันความหนาว"}]
+        return {"analysis": v_free, "items": items_free}, False
 
 # --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
@@ -131,15 +146,9 @@ def main_dashboard():
         
         dark_mode = st.toggle(t["theme_label"], value=False)
         if dark_mode:
-            st.markdown("""<style>
-                .stApp { background-color: #0f172a; color: #f8fafc; }
-                [data-testid="stSidebar"] { background-color: #1e293b; }
-                .analysis-box { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155; padding:20px; border-radius:12px; }
-                </style>""", unsafe_allow_html=True)
+            st.markdown("""<style>.stApp { background-color: #0f172a; color: #f8fafc; } [data-testid="stSidebar"] { background-color: #1e293b; } .analysis-box { background: #1e293b !important; padding:20px; border-radius:12px; border: 1px solid #334155; } .shop-card { background:#334155; padding: 15px; border-radius: 10px; border-left: 5px solid #6366f1; margin-bottom: 10px; }</style>""", unsafe_allow_html=True)
         else:
-            st.markdown("""<style>
-                .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
-                </style>""", unsafe_allow_html=True)
+            st.markdown("""<style>.analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; } .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }</style>""", unsafe_allow_html=True)
 
         if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
@@ -159,40 +168,41 @@ def main_dashboard():
             end = d_col2.date_input(t["end_date"], datetime.now() + timedelta(days=3))
             
             activity = st.multiselect(t["activity_label"], t["activities"], default=t["activities"][0])
-            st.radio(t["gender"], [t["male"], t["female"]], key="gender_val", horizontal=True)
+            st.session_state['gender_val'] = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
             
             st.divider()
             st.subheader(t["upload_section"])
-            img_file = st.file_uploader("อัปโหลดรูปภาพเสื้อผ้าที่มี", type=['jpg','png','jpeg'])
+            tabs = st.tabs(["📁 คลังภาพ", "📸 ถ่ายภาพ"])
+            with tabs[0]: img_file = st.file_uploader("", type=['jpg','png','jpeg'], key="up_main")
+            with tabs[1]: cam_file = st.camera_input("")
+            
+            active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
     with col2:
         if run_btn:
-            # ดึงข้อมูลการวิเคราะห์
-            result_data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, current_lang)
-
-            # [ลำดับที่ 1] ผลวิเคราะห์การแต่งกาย
+            result_data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
+            
+            # 1. ผลวิเคราะห์การแต่งกาย (ย้ายมาไว้บนสุด)
             st.subheader(t["analysis_title"])
             st.markdown(f'<div class="analysis-box">{result_data["analysis"]}</div>', unsafe_allow_html=True)
             
             st.divider()
 
-            # [ลำดับที่ 2] 3D Model
+            # 2. 3D Model หรือ Reference Image
             if is_premium:
                 render_3d_model()
             else:
-                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Style (Free Mode)")
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
 
+            # 3. แหล่งช้อปปิ้งแนะนำ (วนลูปสร้างปุ่มตามแบรนด์)
             st.divider()
-
-            # [ลำดับที่ 3] แหล่งช้อปปิ้งแนะนำ (ดึงข้อมูลจาก AI)
             st.subheader(t["shop_title"])
             st.markdown("""
                 <style>
-                .shop-card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: white; color: #1e293b; }
-                .btn-shopee { background: #EE4D2D; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; margin-right: 5px; display: inline-block; }
-                .btn-uniqlo { background: #FF0000; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; margin-right: 5px; display: inline-block; }
-                .btn-lazada { background: #00008B; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; display: inline-block; }
+                .btn-shopee { background-color: #EE4D2D !important; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; margin-right: 5px; }
+                .btn-uniqlo { background-color: #FF0000 !important; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; margin-right: 5px; }
+                .btn-lazada { background-color: #101566 !important; color: white !important; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
                 </style>
             """, unsafe_allow_html=True)
 
@@ -200,13 +210,11 @@ def main_dashboard():
                 kw = quote_plus(item["name"])
                 st.markdown(f"""
                 <div class="shop-card">
-                    <strong>🧥 {item['name']}</strong>
-                    <p style='font-size: 0.85rem; color: #64748b; margin: 5px 0;'><strong>เหตุผลที่แนะนำ:</strong> {item['reason']}</p>
-                    <div style='margin-top: 10px;'>
-                        <a href="https://shopee.co.th/search?keyword={kw}" target="_blank" class="btn-shopee">🟠 Shopee</a>
-                        <a href="https://www.uniqlo.com/th/th/search/?q={kw}" target="_blank" class="btn-uniqlo">🔴 Uniqlo</a>
-                        <a href="https://www.lazada.co.th/catalog/?q={kw}" target="_blank" class="btn-lazada">🔵 Lazada</a>
-                    </div>
+                    <strong>🧥 {item['name']}</strong><br>
+                    <small style='color: gray;'>เหตุผล: {item['reason']}</small><br><br>
+                    <a href="https://shopee.co.th/search?keyword={kw}" target="_blank" class="btn-shopee">🧡 Shopee</a>
+                    <a href="https://www.uniqlo.com/th/th/search/?q={kw}" target="_blank" class="btn-uniqlo">🔴 Uniqlo</a>
+                    <a href="https://www.lazada.co.th/catalog/?q={kw}" target="_blank" class="btn-lazada">💙 Lazada</a>
                 </div>
                 """, unsafe_allow_html=True)
         else:
@@ -214,24 +222,26 @@ def main_dashboard():
 
 # --- 🔑 4. หน้า Login ---
 def login_page():
-    t = LANG_DATA[st.session_state.get('lang_choice', 'Thai')]
-    st.markdown("<h1 style='text-align: center;'>Tripnify</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center;'>{t['login_sub']}</p>", unsafe_allow_html=True)
+    current_lang = st.session_state.get('lang_choice', 'Thai')
+    t = LANG_DATA[current_lang]
     
-    _, c2, _ = st.columns([1, 1.5, 1])
+    st.markdown("<h1 style='text-align: center; font-size: 3.5rem;'>Tripnify</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; color: gray;'>{t['login_sub']}</p>", unsafe_allow_html=True)
+
+    _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
-        st.text_input("Username", placeholder="กรอกชื่อผู้ใช้")
-        st.text_input("Password", type="password", placeholder="กรอกรหัสผ่าน")
+        user = st.text_input("Username", placeholder="Username")
+        pwd = st.text_input("Password", type="password", placeholder="Password")
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
-            st.session_state['logged_in'] = True
-            st.rerun()
+            st.session_state['logged_in'] = True; st.rerun()
         if st.button(t["guest_btn"], use_container_width=True):
-            st.session_state['logged_in'] = True
-            st.rerun()
+            st.session_state['logged_in'] = True; st.rerun()
 
 # --- 🚀 5. Main Controller ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
+if 'lang_choice' not in st.session_state:
+    st.session_state['lang_choice'] = 'Thai'
 
 if st.session_state['logged_in']:
     main_dashboard()
