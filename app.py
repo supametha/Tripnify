@@ -198,38 +198,32 @@ def main_dashboard():
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
             w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-
+            
             st.divider()
-
-            # 🔍 Analysis FIRST
-            st.subheader(t["analysis_title"])
-            st.markdown(f"<div class='analysis-box'>{result}</div>", unsafe_allow_html=True)
-
-            # 🎭 3D ต่อจากผลวิเคราะห์
-            st.divider()
+            
+            # 3D Model OR Reference Image
             if is_premium:
                 render_3d_model()
             else:
-                st.image(
-                    "https://images.unsplash.com/photo-1517495306684-21523df7d62c",
-                    caption="Reference Outfit (Free Mode)"
-                )
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
 
-            # 🛍️ Shopping
+            # Analysis Text
+            st.subheader(t["analysis_title"])
+            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
+            
+            # Shopping
             st.divider()
             st.subheader(t["shop_title"])
-            for item in ["เสื้อโค้ทกันหนาว","ถุงมือกันหนาว","รองเท้าบูทกันหนาว"]:
+            for item in t["essentials"]:
                 st.markdown(f"""
-                <div class="shop-card">
-                    🔹 {item}<br>
-                    <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank">
-                        คลิกเพื่อค้นหาสินค้า
-                    </a>
-                </div>
+                    <div class="shop-card">
+                        <strong>🔹 {item}</strong><br>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
+                    </div>
                 """, unsafe_allow_html=True)
-
         else:
-            st.info("👈 กรอกข้อมูลแล้วกดเริ่มวิเคราะห์")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
+
 
 # -------------------------------
 # --- 🔑 4. หน้า Login ---
