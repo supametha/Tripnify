@@ -114,67 +114,73 @@ def main_dashboard():
 
 # --- 🔑 2. หน้า Login ---
 def login_page():
-    # ใช้ภาษาจาก session state (ค่าเริ่มต้นคือไทย)
+    # ดึงภาษาปัจจุบัน
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    # แก้ไขบรรทัดที่ 105-110 (โดยประมาณ)
-st.markdown("<br>", unsafe_allow_html=True)
-col_logo, col_mid, col_logo2 = st.columns([1, 1, 1])
-with col_mid:
-    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
+    # CSS สำหรับจัดปุ่ม Social และปรับแต่งหน้าตา
+    st.markdown("""<style>
+        .login-container { text-align: center; margin-bottom: 20px; }
+        .social-btn { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; }
+        .social-icon { width: 20px; margin-right: 12px; }
+        .social-text { font-weight: 500; font-size: 14px; }
+    </style>""", unsafe_allow_html=True)
 
-st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-st.markdown(f"<h1>{t['login_title']}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='color: gray;'>{t['login_sub']}</p>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+    # 1. ส่วนโลโก้และหัวข้อ (จัดกึ่งกลาง)
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_l, col_mid, col_r = st.columns([1, 1, 1])
+    with col_mid:
+        # ใช้รูปโลโก้ของคุณ (เปลี่ยน URL ได้ตามต้องการ)
+        st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
+    
+    st.markdown(f"""
+        <div class="login-container">
+            <h1 style='margin-top: 0;'>{t['login_title']}</h1>
+            <p style='color: gray;'>{t['login_sub']}</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=100)
-    st.markdown(f"<h1>{t['login_title']}</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color: gray;'>{t['login_sub']}</p>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns([1, 1.5, 1])
+    # 2. ส่วนปุ่มเข้าสู่ระบบ
+    _, c2, _ = st.columns([1, 1.5, 1])
     with c2:
-       with c2:
-    # ปุ่ม Facebook ภาษาไทย
-    st.markdown(f"""<div class="social-btn">
-        <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
-        <span style="color: #1877F2; font-weight: bold;">เข้าสู่ระบบด้วย Facebook</span>
-    </div>""", unsafe_allow_html=True)
-    if st.button("Facebook Login", key="fb_hidden", label_visibility="collapsed", use_container_width=True): 
-        st.session_state['logged_in'] = True; st.rerun()
+        # ปุ่ม Facebook (ภาษาไทย + Logo)
+        st.markdown(f"""<div class="social-btn">
+            <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
+            <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
+        </div>""", unsafe_allow_html=True)
+        if st.button("", key="fb_btn", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
 
-    # ปุ่ม Google ภาษาไทย
-    st.markdown(f"""<div class="social-btn">
-        <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
-        <span style="color: #5F6368; font-weight: bold;">เข้าสู่ระบบด้วย Google</span>
-    </div>""", unsafe_allow_html=True)
-    if st.button("Google Login", key="google_hidden", label_visibility="collapsed", use_container_width=True): 
-        st.session_state['logged_in'] = True; st.rerun()
-        # Google Login Button
+        # ปุ่ม Google (ภาษาไทย + Logo)
         st.markdown(f"""<div class="social-btn">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
-            <span style="color: #5F6368; font-weight: bold;">Continue with Google</span>
+            <span class="social-text" style="color: #5F6368;">เข้าสู่ระบบด้วย Google</span>
         </div>""", unsafe_allow_html=True)
-        if st.button("Google Login", key="google_hidden", help="เข้าสู่ระบบผ่าน Google", use_container_width=True): 
-            st.session_state['logged_in'] = True; st.rerun()
+        if st.button("", key="google_btn", use_container_width=True):
+            st.session_state['logged_in'] = True
+            st.rerun()
 
-        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin-top: 25px;'>", unsafe_allow_html=True)
         
-        user = st.text_input("Username / ชื่อผู้ใช้งาน")
-        pwd = st.text_input("Password / รหัสผ่าน", type="password")
+        # ฟอร์ม Login ปกติ
+        user = st.text_input("Username / ชื่อผู้ใช้งาน", placeholder="กรอกชื่อผู้ใช้งาน")
+        pwd = st.text_input("Password / รหัสผ่าน", type="password", placeholder="กรอกรหัสผ่าน")
         
-        st.button(t["login_btn"], use_container_width=True, type="primary")
+        if st.button(t["login_btn"], use_container_width=True, type="primary"):
+            if user:
+                st.session_state['logged_in'] = True
+                st.rerun()
         
-        # ส่วนที่เพิ่ม: ลงทะเบียน และ ทดลองใช้ฟรี
+        # ปุ่มลงทะเบียนและทดลองใช้ (จัดเรียงใหม่ให้สวยงาม)
         col_sub1, col_sub2 = st.columns(2)
         with col_sub1:
-            if st.button(t["reg_btn"], use_container_width=True): st.info("ระบบลงทะเบียนจะเปิดให้ใช้งานเร็วๆ นี้")
+            if st.button(t["reg_btn"], use_container_width=True):
+                st.info("ระบบลงทะเบียนจะเปิดเร็วๆ นี้")
         with col_sub2:
             if st.button(t["guest_btn"], use_container_width=True):
-                st.session_state['logged_in'] = True; st.rerun()
+                st.session_state['logged_in'] = True
+                st.rerun()
 
 # --- 🚀 3. ส่วนควบคุมหลัก ---
 if 'logged_in' not in st.session_state:
