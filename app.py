@@ -65,25 +65,92 @@ CITY_DATA = {
 import streamlit as st
 from datetime import datetime, timedelta
 
-# --- 🎨 1. หน้า Dashboard (ปรับปรุงส่วนอัพโหลด/ถ่ายรูป) ---
+# --- 🌐 1. ปรับปรุงพจนานุกรมภาษา (Language Control) ---
+LANG_DATA = {
+    "Thai": {
+        "travel_info": "🗓️ รายละเอียดการเดินทาง",
+        "start_date": "วันที่เริ่มต้น",
+        "end_date": "วันที่สิ้นสุด",
+        "activity_label": "กิจกรรมที่วางแผนไว้",
+        "activities": ["ท่องเที่ยวทั่วไป", "ติดต่อธุรกิจ", "กิจกรรมกลางแจ้ง/เดินป่า", "งานเลี้ยง/ดินเนอร์", "ไปทะเล"],
+        "upload_section": "📸 จัดการรูปภาพชุดแต่งกาย",
+        "theme_label": "โหมดแสดงผล (มืด/สว่าง)",
+        "lang_label": "เลือกภาษา (Language)",
+        "run_btn": "✨ เริ่มวิเคราะห์การแต่งกาย",
+        "settings": "⚙️ ตั้งค่าระบบ"
+    },
+    "English": {
+        "travel_info": "🗓️ Travel Itinerary",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "activity_label": "Planned Activities",
+        "activities": ["General Sightseeing", "Business Trip", "Outdoor/Hiking", "Dinner/Party", "Beach Trip"],
+        "upload_section": "📸 Outfit Management",
+        "theme_label": "Display Mode (Dark/Light)",
+        "lang_label": "Language Selection",
+        "run_btn": "✨ Start Analysis",
+        "settings": "⚙️ System Settings"
+    }
+}
+
 def main_dashboard():
+    # ดึงค่าภาษาปัจจุบัน
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
+    # --- 🌓 2. ปรับโหมดมืดให้สมดุล (Soft Dark Mode) ---
     with st.sidebar:
         st.subheader(t["settings"])
-        st.radio("Select Language", ["Thai", "English"], key='lang_choice', horizontal=True)
-        api_key = st.text_input(t["api_label"], type="password")
-        use_free_mode = st.toggle(t["free_mode"], value=not api_key)
+        # ส่วนควบคุมภาษา
+        st.radio(t["lang_label"], ["Thai", "English"], key='lang_choice', horizontal=True)
         
-        if st.button(t["logout"], use_container_width=True):
-            st.session_state['logged_in'] = False
-            st.rerun()
+        st.divider()
+        dark_mode = st.toggle(t["theme_label"], value=False)
+        
+        if dark_mode:
+            # ใช้สีโทน Slate/Navy แทนสีดำสนิท เพื่อให้มองเห็นองค์ประกอบชัดเจน
+            st.markdown("""
+                <style>
+                .stApp { background-color: #0f172a; color: #f8fafc; }
+                [data-testid="stSidebar"] { background-color: #1e293b; }
+                .stSelectbox label, .stDateInput label, .stRadio label, p { color: #e2e8f0 !important; }
+                .stButton button { background-color: #334155; border: 1px solid #475569; }
+                div[data-testid="stExpander"] { background-color: #1e293b; border: 1px solid #334155; }
+                </style>
+            """, unsafe_allow_html=True)
 
+    # --- 🗓️ 3. ปรับส่วนรายละเอียดการเดินทาง (เพิ่มวันไป-กลับ และ กิจกรรม) ---
     st.title("🌍 Tripnify Dashboard")
     
     col1, col2 = st.columns([1, 1.4])
     with col1:
+        with st.container(border=True):
+            st.subheader(t["travel_info"])
+            
+            # วันเริ่มต้น - วันสิ้นสุด
+            d_col1, d_col2 = st.columns(2)
+            with d_col1:
+                start = st.date_input(t["start_date"], datetime.now())
+            with d_col2:
+                end = st.date_input(t["end_date"], datetime.now() + timedelta(days=3))
+            
+            # เพิ่มส่วนกิจกรรม
+            activity = st.multiselect(t["activity_label"], t["activities"], default=t["activities"][0])
+            
+            st.divider()
+            
+            # ส่วนจัดการรูปภาพ (อัพโหลด/ถ่ายรูป เหมือนเดิม)
+            st.subheader(t["upload_section"])
+            tabs = st.tabs(["📁 คลังภาพ", "📸 ถ่ายภาพ"])
+            with tabs[0]:
+                img = st.file_uploader("", type=['jpg','png','jpeg'], key="dash_upload")
+            with tabs[1]:
+                cam = st.camera_input("")
+            
+            st.button(t["run_btn"], use_container_width=True, type="primary")
+
+    with col2:
+        st.info("ส่วนแสดงผล 3D และผลการวิเคราะห์จะปรากฏในส่วนนี้")
         with st.container(border=True):
             st.subheader(t["travel_info"])
             country = st.selectbox(t["dest"], list(CITY_DATA.keys()))
