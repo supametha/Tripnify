@@ -99,27 +99,41 @@ def render_3d_model():
         </script>
     """, height=420)
 
-# --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
+# --- ⚙️ 2. ระบบวิเคราะห์ Logic (ปรับปรุงใหม่) ---
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
     days = (end_date - start_date).days + 1
+    
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
-            prompt = f"Analyze outfit for {city}, {country}. Weather approx 2°C. Activity: {activity}. Trip: {days} days. Gender: {st.session_state.get('gender_val')}. Response in {lang}."
+            # ปรับ Prompt ให้ AI ตอบในรูปแบบที่นำไปแยกส่วนได้ง่าย
+            prompt = (f"Analyze outfit for {city}, {country}. Activity: {activity}. Respond in {lang}. "
+                      f"At the end, list 3 essential items to buy, each on a new line starting with 'ITEM: '")
+            
             if uploaded_file:
                 b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
                 )
-                return response.choices[0].message.content, True # True = Premium Mode
-            return "กรุณาอัปโหลดรูปภาพเพื่อเริ่มการวิเคราะห์แบบ AI", False
-        except Exception as e:
-            return f"Error: {e}", False
-    else:
-        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
-        return v_free, False # False = Free Mode
+                full_text = response.choices[0].message.content
+                # แยกข้อความวิเคราะห์ และ รายการสินค้า
+                analysis_part = full_text.split("ITEM:")[0].strip()
+                items_part = [i.strip() for i in full_text.split("ITEM:") if i.strip()][1:] # ดึงรายการที่ AI แนะนำมา
+                
+                # ถ้า AI แนะนำไม่ครบตาม Format ให้ใช้ค่า Default เสริม
+                if not items_part:
+                    items_part = ["เสื้อโค้ทกันหนาว", "ลองจอห์น", "ถุงมือ"]
 
+                return {"analysis": analysis_part, "items": items_part}, True
+            return "กรุณาอัปโหลดรูปภาพ", False
+        except Exception as e:
+            return {"analysis": f"Error: {e}", "items": []}, False
+    else:
+        # โหมดใช้งานฟรี
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
+        items_free = ["เสื้อโค้ทบุขน", "กางเกงกันหนาว", "แผ่นแปะความร้อน"]
+        return {"analysis": v_free, "items": items_free}, False
 # --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
     current_lang = st.session_state.get('lang_choice', 'Thai')
@@ -175,39 +189,44 @@ def main_dashboard():
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
-    with col2:
+   with col2:
         if run_btn:
-            result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
+            result_data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
             
-            # Weather Widget
-            w_col1, w_col2 = st.columns([1, 2])
-            w_col1.metric(t["temp_label"], "2°C")
-            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-            
+            # 1. แสดงบทวิเคราะห์ (Analysis Text) - ย้ายขึ้นมาก่อน
+            st.subheader(t["analysis_title"])
+            if isinstance(result_data, dict):
+                st.markdown(f'<div class="analysis-box">{result_data["analysis"]}</div>', unsafe_allow_html=True)
+            else:
+                st.info(result_data)
+
             st.divider()
-            
-            # 3D Model OR Reference Image
+
+            # 2. แสดง 3D Model หรือ Reference Image
             if is_premium:
                 render_3d_model()
             else:
                 st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
 
-            # Analysis Text
-            st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
-            
-            # Shopping
+            # 3. แหล่งช้อปปิ้งแนะนำ (ดึงจากรายการสินค้าที่วิเคราะห์ได้)
             st.divider()
             st.subheader(t["shop_title"])
-            for item in t["essentials"]:
-                st.markdown(f"""
-                    <div class="shop-card">
-                        <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
-                    </div>
-                """, unsafe_allow_html=True)
+            
+            items_to_show = result_data["items"] if isinstance(result_data, dict) else t["essentials"]
+            
+            for item in items_to_show:
+                with st.expander(f"🛒 ซื้อ: {item}"):
+                    # คำอธิบายความเหมาะสม (จำลองตามประเภทสินค้า)
+                    st.write(f"**ความเหมาะสม:** อุปกรณ์ชิ้นนี้จำเป็นอย่างยิ่งสำหรับ {city} เพื่อรักษาอุณหภูมิร่างกายและช่วยให้ทำกิจกรรม {', '.join(activity)} ได้อย่างสะดวกสบาย")
+                    st.markdown(f"""
+                        <div class="shop-card">
+                            <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5; font-weight:bold;">
+                                👉 คลิกเพื่อดูราคาและสั่งซื้อใน Shopee
+                            </a>
+                        </div>
+                    """, unsafe_allow_html=True)
         else:
-            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์")
 
 # --- 🔑 4. หน้า Login ---
 def login_page():
