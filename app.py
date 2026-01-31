@@ -97,11 +97,13 @@ def render_3d_model():
 
 # --- ⚙️ 2. ระบบวิเคราะห์ Logic ---
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
+    days = (end_date - start_date).days + 1
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
+            # ปรับ Prompt ให้ AI ส่งข้อมูลสินค้าและเหตุผลแยกมาให้ชัดเจน
             prompt = (f"Analyze outfit for {city}, {country}. Activity: {activity}. Respond in {lang}. "
-                      f"Finally, list 3 essential items to buy, each starting with 'ITEM: '")
+                      f"At the end, list 3-4 specific essential items. Format each item as 'ITEM: [Name] | REASON: [Why it is suitable]'.")
             
             if uploaded_file:
                 b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
@@ -111,15 +113,26 @@ def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_f
                 )
                 full_text = response.choices[0].message.content
                 analysis_part = full_text.split("ITEM:")[0].strip()
-                items_part = [i.strip() for i in full_text.split("ITEM:") if i.strip()][1:]
+                # ดึงรายการสินค้าและเหตุผลมาเก็บเป็น List of Dict
+                items_raw = [i.strip() for i in full_text.split("ITEM:") if "|" in i]
+                items_data = []
+                for entry in items_raw:
+                    parts = entry.split("|")
+                    items_data.append({"name": parts[0].replace("ITEM:", "").strip(), "reason": parts[1].replace("REASON:", "").strip()})
                 
-                if not items_part:
-                    items_part = ["เสื้อโค้ทกันหนาว", "ถุงมือ", "ลองจอห์น"]
-                
-                return {"analysis": analysis_part, "items": items_part}, True
-            return {"analysis": "กรุณาอัปโหลดรูปภาพ", "items": []}, False
+                return {"analysis": analysis_part, "items": items_data}, True
+            return "กรุณาอัปโหลดรูปภาพ", False
         except Exception as e:
-            return {"analysis": f"Error: {e}", "items": []}, False
+            return f"Error: {e}", False
+    else:
+        # โหมดฟรี: ใช้ข้อมูลจำลองที่มีเหตุผลประกอบ
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
+        items_free = [
+            {"name": "เสื้อโค้ทกันหนาว", "reason": "ช่วยกันลมและรักษาความร้อนในร่างกายได้ดีที่สุดในอุณหภูมิเลขตัวเดียว"},
+            {"name": "ลองจอห์น / Heattech", "reason": "เป็นชั้นในที่ช่วยระบายอากาศแต่เก็บกักความร้อนแนบผิวหนัง"},
+            {"name": "แผ่นแปะความร้อน", "reason": "ช่วยเพิ่มความอบอุ่นเฉพาะจุด เช่น กระเป๋าเสื้อหรือแผ่นหลัง เมื่อต้องอยู่กลางแจ้งนานๆ"}
+        ]
+        return {"analysis": v_free, "items": items_free}, False
     else:
         v_free = "แนะนำการแต่งกาย: เน้นการใส่เสื้อผ้า 3 ชั้น (Layering) เพื่อปรับตามอุณหภูมิได้ง่าย"
         items_free = ["เสื้อกันหนาว Uniqlo", "กางเกงบุขน", "แผ่นแปะความร้อน"]
@@ -165,31 +178,52 @@ def main_dashboard():
             img_file = st.file_uploader("คลังภาพ", type=['jpg','png','jpeg'])
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
-    with col2:
+  with col2:
         if run_btn:
-            result_data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, img_file, current_lang, start, end)
+            result_data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
             
-            # 1. แสดงผลวิเคราะห์ก่อน
+            # --- [ปรับที่ 1] แสดงบทวิเคราะห์ก่อน ---
             st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result_data["analysis"]}</div>', unsafe_allow_html=True)
+            analysis_text = result_data["analysis"] if isinstance(result_data, dict) else result_data
+            st.markdown(f'<div class="analysis-box">{analysis_text}</div>', unsafe_allow_html=True)
             st.divider()
 
-            # 2. แสดง 3D Model
+            # --- [ปรับที่ 2] แสดง 3D (Premium) หรือรูปภาพ (Free) ---
             if is_premium:
                 render_3d_model()
             else:
-                st.info("โหมดฟรี: แสดงภาพตัวอย่างชุดทั่วไป")
-                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?w=500")
-
-            # 3. แหล่งช้อปปิ้งแนะนำ (ดึงจาก AI/ระบบฟรี)
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
+            
+            # --- [ปรับที่ 3] แหล่งช้อปปิ้งแนะนำ พร้อมคำอธิบายและโลโก้ ---
             st.divider()
             st.subheader(t["shop_title"])
-            for item in result_data["items"]:
-                with st.expander(f"🔹 {item}"):
-                    st.write(f"ไอเทมนี้คัดเลือกมาให้เหมาะสมกับกิจกรรม {', '.join(activity)} ที่ {city}")
-                    st.markdown(f"[🛒 คลิกเพื่อค้นหาบน Shopee](https://shopee.co.th/search?keyword={quote_plus(item)})")
+            
+            items_to_show = result_data["items"] if isinstance(result_data, dict) else []
+            
+            for item in items_to_show:
+                with st.expander(f"🛒 แนะนำสินค้า: {item['name']}"):
+                    st.write(f"**เหตุผลความเหมาะสม:** {item['reason']}")
+                    st.write("เลือกซื้อได้ที่:")
+                    
+                    # สร้างปุ่มพร้อม Icon สำหรับ Shopee, Uniqlo, Lazada
+                    shop_cols = st.columns(3)
+                    
+                    # Shopee
+                    with shop_cols[0]:
+                        st.markdown(f'[![Shopee](https://img.icons8.com/color/48/shopee.png)](https://shopee.co.th/search?keyword={quote_plus(item["name"])})')
+                        st.caption("Shopee")
+                    
+                    # Uniqlo
+                    with shop_cols[1]:
+                        st.markdown(f'[![Uniqlo](https://img.icons8.com/color/48/uniqlo.png)](https://www.uniqlo.com/th/en/search/?q={quote_plus(item["name"])})')
+                        st.caption("Uniqlo")
+                        
+                    # Lazada
+                    with shop_cols[2]:
+                        st.markdown(f'[![Lazada](https://img.icons8.com/color/48/lazada.png)](https://www.lazada.co.th/catalog/?q={quote_plus(item["name"])})')
+                        st.caption("Lazada")
         else:
-            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
 
 # --- 🔑 4. หน้า Login ---
 def login_page():
