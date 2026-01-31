@@ -99,26 +99,65 @@ def render_3d_model():
         </script>
     """, height=420)
 
-# --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
+# --- แก้ไขส่วน ⚙️ 2. ระบบวิเคราะห์ Logic เพื่อให้รองรับข้อมูลสินค้าและเหตุผล ---
 def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
-    days = (end_date - start_date).days + 1
+    # จำลองการดึงข้อมูลจาก AI (หากใช้ API จริงควรให้ AI ตอบเป็น JSON format)
     if api_key and not use_free_mode:
-        try:
-            client = OpenAI(api_key=api_key)
-            prompt = f"Analyze outfit for {city}, {country}. Weather approx 2°C. Activity: {activity}. Trip: {days} days. Gender: {st.session_state.get('gender_val')}. Response in {lang}."
-            if uploaded_file:
-                b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
-                )
-                return response.choices[0].message.content, True # True = Premium Mode
-            return "กรุณาอัปโหลดรูปภาพเพื่อเริ่มการวิเคราะห์แบบ AI", False
-        except Exception as e:
-            return f"Error: {e}", False
+        # ตัวอย่างข้อมูลที่ AI วิเคราะห์ออกมา
+        analysis_text = f"สภาพอากาศที่ {city} หนาวจัด แนะนำให้สวมใส่เสื้อผ้าที่เน้นกักเก็บความร้อน"
+        items = [
+            {"name": "Heattech Ultra Warm", "reason": "เป็นเลเยอร์แรกที่ช่วยรักษาอุณหภูมิร่างกายได้ดีที่สุดในอากาศเลขตัวเดียว"},
+            {"name": "Down Jacket กันลม", "reason": "ช่วยป้องกันลมหนาวและหิมะไม่ให้ซึมเข้าสู่ร่างกายชั้นใน"},
+            {"name": "ถุงมือบุขนแกะ", "reason": "ป้องกันภาวะปลายนิ้วชาเพื่อให้คุณถ่ายภาพได้สะดวก"}
+        ]
+        return {"text": analysis_text, "items": items}, True
     else:
-        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
-        return v_free, False # False = Free Mode
+        # ข้อมูลสำหรับ Free Mode
+        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน"
+        items_free = [
+            {"name": "เสื้อโค้ทกันหนาว", "reason": "พื้นฐานสำคัญสำหรับการท่องเที่ยวในที่อากาศเย็น"},
+            {"name": "กางเกงบุขน", "reason": "ช่วยให้ขาสามารถทนต่ออุณหภูมิต่ำได้นานขึ้น"}
+        ]
+        return {"text": v_free, "items": items_free}, False
+
+# --- แก้ไขส่วน 🎨 3. หน้า Dashboard ในส่วน col2 (บรรทัดเดิมประมาณ 185 เป็นต้นไป) ---
+    with col2:
+        if run_btn:
+            data, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
+            
+            # 1. แสดงผลวิเคราะห์ก่อน (ตามคำสั่ง)
+            st.subheader(t["analysis_title"])
+            st.markdown(f'<div class="analysis-box">{data["text"]}</div>', unsafe_allow_html=True)
+            
+            st.divider()
+
+            # 2. แสดง 3D Model ต่อจากผลวิเคราะห์
+            if is_premium:
+                render_3d_model()
+            else:
+                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
+
+            # 3. แหล่งช้อปปิ้งแนะนำ (ดึงจาก AI Keyword + Logo Icons)
+            st.divider()
+            st.subheader(t["shop_title"])
+            
+            for item in data["items"]:
+                with st.expander(f"🛒 แนะนำให้ซื้อ: {item['name']}"):
+                    st.write(f"**💡 ทำไมชิ้นนี้ถึงเหมาะกับทริปนี้:** {item['reason']}")
+                    st.write("**เลือกซื้อได้ที่:**")
+                    
+                    # ส่วนของปุ่ม Shopping พร้อม Logo
+                    kw = quote_plus(item['name'])
+                    s_col1, s_col2, s_col3 = st.columns(3)
+                    
+                    with s_col1:
+                        st.markdown(f'[![Shopee](https://img.icons8.com/color/48/shopee.png)](https://shopee.co.th/search?keyword={kw})  \n[Shopee](https://shopee.co.th/search?keyword={kw})', unsafe_allow_html=True)
+                    with s_col2:
+                        st.markdown(f'[![Uniqlo](https://img.icons8.com/color/48/u.png)](https://www.uniqlo.com/th/th/search/?q={kw})  \n[Uniqlo](https://www.uniqlo.com/th/th/search/?q={kw})', unsafe_allow_html=True)
+                    with s_col3:
+                        st.markdown(f'[![Lazada](https://img.icons8.com/color/48/lazada.png)](https://www.lazada.co.th/catalog/?q={kw})  \n[Lazada](https://www.lazada.co.th/catalog/?q={kw})', unsafe_allow_html=True)
+        else:
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์")
 
 # --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
