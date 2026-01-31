@@ -156,22 +156,25 @@ def main_dashboard():
             st.info("👈 กรุณากรอกข้อมูลและกดเริ่มวิเคราะห์")
 
 # --- 🔑 3. หน้า Login ---
-def login_page():
-    st.markdown("""<style>
-        .stButton > button { border-radius: 8px; height: 3.5em; font-weight: 500; }
-        .social-container { display: flex; align-items: center; justify-content: center; background-color: white; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -48px; pointer-events: none; position: relative; z-index: 10; }
-        .social-text { color: #3c4043; font-family: sans-serif; font-weight: 500; font-size: 14px; }
-    </style>""", unsafe_allow_html=True)
+# --- แก้ไขภายในฟังก์ชัน login_page() ---
 
-    # --- ส่วนที่แก้ให้ Logo อยู่กึ่งกลาง ---
+def login_page():
+    # ... (ส่วน CSS ด้านบนคงไว้เหมือนเดิม) ...
+
+    # เริ่มส่วนแสดงผลโลโก้กึ่งกลาง
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<center>", unsafe_allow_html=True)
-    # ใส่ Link รูปโลโก้ของคุณที่นี่ (ตอนนี้เป็นรูปตัวอย่าง)
-    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
+    st.markdown("<center>", unsafe_allow_html=True) # เริ่มการจัดกึ่งกลาง
+    
+    # แทนที่ URL รูปภาพด้วยลิงก์โลโก้ของคุณ
+    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120) 
+    
     st.markdown("<h1 style='margin-bottom: 0;'>Tripnify</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 18px; color: gray;'>จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ</p>", unsafe_allow_html=True)
-    st.markdown("</center>", unsafe_allow_html=True)
+    
+    st.markdown("</center>", unsafe_allow_html=True) # ปิดการจัดกึ่งกลาง
     st.markdown("---")
+    
+    # ... (ส่วนปุ่ม Login Google/Facebook ด้านล่างคงไว้เหมือนเดิม) ...
     
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
     facebook_logo = "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
