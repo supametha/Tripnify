@@ -73,53 +73,68 @@ CITY_DATA = {
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
 
-# --- 🎮 1. ฟังก์ชันแสดงผล 3D Model (Premium) ---
+
+# -------------------------------
+# 🎭 3D Model (Premium)
+# -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
     components.html("""
-        <div id="viewer-3d" style="width: 100%; height: 400px; background: radial-gradient(circle, #334155 0%, #0f172a 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; cursor: grab; border: 2px solid #6366f1;">
-            <div id="character" style="font-size: 150px; transition: transform 0.1s linear; user-select: none;">🧥</div>
-            <div style="position: absolute; bottom: 20px; color: #94a3b8; font-family: sans-serif; font-size: 12px; pointer-events: none;">
-                [ ลากเพื่อหมุนดูชุดรอบตัว 360° ]
+        <div id="viewer-3d" style="width:100%;height:400px;
+        background:radial-gradient(circle,#334155 0%,#0f172a 100%);
+        border-radius:20px;display:flex;align-items:center;justify-content:center;
+        position:relative;cursor:grab;border:2px solid #6366f1;">
+            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
+            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
+                [ ลากเพื่อหมุนดูชุด 360° ]
             </div>
         </div>
         <script>
-            const el = document.getElementById('viewer-3d');
-            const char = document.getElementById('character');
-            let isDragging = false; let rotation = 0; let startX;
-            el.onmousedown = (e) => { isDragging = true; startX = e.pageX; el.style.cursor = 'grabbing'; };
-            window.onmouseup = () => { isDragging = false; el.style.cursor = 'grab'; };
-            window.onmousemove = (e) => {
-                if (!isDragging) return;
-                const delta = e.pageX - startX;
-                rotation += delta * 0.5;
-                char.style.transform = `rotateY(${rotation}deg)`;
-                startX = e.pageX;
+            const el=document.getElementById('viewer-3d');
+            const char=document.getElementById('character');
+            let drag=false,rot=0,startX=0;
+            el.onmousedown=e=>{drag=true;startX=e.pageX;};
+            window.onmouseup=()=>drag=false;
+            window.onmousemove=e=>{
+                if(!drag)return;
+                const d=e.pageX-startX;
+                rot+=d*0.5;
+                char.style.transform=`rotateY(${rot}deg)`;
+                startX=e.pageX;
             };
         </script>
     """, height=420)
 
-# --- ⚙️ 2. ระบบวิเคราะห์ Logic (Premium vs Free) ---
-def process_analysis(api_key, country, city, activity, use_free_mode, uploaded_file, lang, start_date, end_date):
-    days = (end_date - start_date).days + 1
-    if api_key and not use_free_mode:
-        try:
-            client = OpenAI(api_key=api_key)
-            prompt = f"Analyze outfit for {city}, {country}. Weather approx 2°C. Activity: {activity}. Trip: {days} days. Gender: {st.session_state.get('gender_val')}. Response in {lang}."
-            if uploaded_file:
-                b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
-                )
-                return response.choices[0].message.content, True # True = Premium Mode
-            return "กรุณาอัปโหลดรูปภาพเพื่อเริ่มการวิเคราะห์แบบ AI", False
-        except Exception as e:
-            return f"Error: {e}", False
-    else:
-        v_free = "แนะนำชุดกันหนาว 3 ชั้น: Heattech, ไหมพรม, และเสื้อโค้ทบุขน" if lang == "Thai" else "Layering recommended: Heattech, Sweater, and Down Jacket."
-        return v_free, False # False = Free Mode
+# -------------------------------
+# ⚙️ Analysis Logic
+# -------------------------------
+def process_analysis(api_key, city, country, activity, free_mode, image, start, end):
+    days = (end - start).days + 1
+    if api_key and not free_mode and image:
+        client = OpenAI(api_key=api_key)
+        b64 = base64.b64encode(image.getvalue()).decode()
+        prompt = f"""
+        วิเคราะห์การแต่งกายสำหรับ {city} ประเทศ{country}
+        อุณหภูมิประมาณ 2°C
+        กิจกรรม: {activity}
+        ระยะเวลา {days} วัน
+        ตอบเป็นภาษาไทย
+        """
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+                ]
+            }]
+        )
+        return res.choices[0].message.content, True
 
+    return "แนะนำแต่งกายแบบ Layering: Heattech + เสื้อไหมพรม + เสื้อโค้ทกันหนาว", False
+
+# -------------------------------
 # --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
     current_lang = st.session_state.get('lang_choice', 'Thai')
@@ -131,7 +146,7 @@ def main_dashboard():
         st.divider()
         api_key = st.text_input(t["api_label"], type="password")
         use_free_mode = st.toggle(t["free_mode"], value=not api_key)
-        
+
         dark_mode = st.toggle(t["theme_label"], value=False)
         if dark_mode:
             st.markdown("""<style>
@@ -139,12 +154,12 @@ def main_dashboard():
                 [data-testid="stSidebar"] { background-color: #1e293b; }
                 .analysis-box { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155; padding:20px; border-radius:12px; }
                 .shop-card { background: #334155; padding: 15px; border-radius: 10px; border-left: 5px solid #6366f1; margin-bottom: 10px; }
-                </style>""", unsafe_allow_html=True)
+            </style>""", unsafe_allow_html=True)
         else:
             st.markdown("""<style>
                 .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
                 .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }
-                </style>""", unsafe_allow_html=True)
+            </style>""", unsafe_allow_html=True)
 
         if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
@@ -153,49 +168,70 @@ def main_dashboard():
     st.title("🌍 Tripnify Dashboard")
     col1, col2 = st.columns([1, 1.4])
 
+    # ---------- LEFT ----------
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
             country = st.selectbox(t["dest"], list(CITY_DATA.keys()))
             city = st.selectbox(t["city"], CITY_DATA[country])
-            
+
             d_col1, d_col2 = st.columns(2)
             start = d_col1.date_input(t["start_date"], datetime.now())
             end = d_col2.date_input(t["end_date"], datetime.now() + timedelta(days=3))
-            
-            activity = st.multiselect(t["activity_label"], t["activities"], default=t["activities"][0])
-            st.session_state['gender_val'] = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
-            
+
+            activity = st.multiselect(
+                t["activity_label"],
+                t["activities"],
+                default=[t["activities"][0]]
+            )
+
+            st.session_state['gender_val'] = st.radio(
+                t["gender"], [t["male"], t["female"]], horizontal=True
+            )
+
             st.divider()
             st.subheader(t["upload_section"])
             tabs = st.tabs(["📁 คลังภาพ", "📸 ถ่ายภาพ"])
-            with tabs[0]: img_file = st.file_uploader("", type=['jpg','png','jpeg'], key="up_main")
-            with tabs[1]: cam_file = st.camera_input("")
-            
+            with tabs[0]:
+                img_file = st.file_uploader("", type=['jpg','png','jpeg'])
+            with tabs[1]:
+                cam_file = st.camera_input("")
+
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
+    # ---------- RIGHT ----------
     with col2:
         if run_btn:
-            result, is_premium = process_analysis(api_key, country, city, activity, use_free_mode, active_img, current_lang, start, end)
-            
-            # Weather Widget
+            result, is_premium = process_analysis(
+                api_key,
+                city,
+                country,
+                activity,
+                use_free_mode,
+                active_img,
+                start,
+                end
+            )
+
+            # Weather
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
             w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-            
+
             st.divider()
-            
-            # 3D Model OR Reference Image
+
+            # Analysis
+            st.subheader(t["analysis_title"])
+            st.markdown(
+                f'<div class="analysis-box">{result}</div>',
+                unsafe_allow_html=True
+            )
+
+            # 3D Model (Premium)
             if is_premium:
                 render_3d_model()
-            else:
-                st.image("https://images.unsplash.com/photo-1517495306684-21523df7d62c?q=80&w=1000", caption="Reference Outfit (Free Mode)")
 
-            # Analysis Text
-            st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
-            
             # Shopping
             st.divider()
             st.subheader(t["shop_title"])
@@ -203,12 +239,18 @@ def main_dashboard():
                 st.markdown(f"""
                     <div class="shop-card">
                         <strong>🔹 {item}</strong><br>
-                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none; color:#4f46e5;">🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง</a>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}"
+                           target="_blank"
+                           style="text-decoration:none;color:#4f46e5;">
+                           🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง
+                        </a>
                     </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์และตัวละคร 3D")
+            st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
 
+
+# -------------------------------
 # --- 🔑 4. หน้า Login ---
 def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
