@@ -16,9 +16,11 @@ LANG_DICT = {
         "logout": "ออกจากระบบ",
         "travel_info": "🗓️ ข้อมูลการเดินทาง",
         "dest": "จุดหมาย",
+        "dest_list": ["ญี่ปุ่น", "เกาหลีใต้", "เวียดนาม", "ไต้หวัน", "จีน"],
         "start": "วันที่เริ่ม",
         "end": "วันที่สิ้นสุด",
         "activity": "กิจกรรม",
+        "act_list": ["ท่องเที่ยวถ่ายรูป", "เล่นสกี/กิจกรรมหิมะ", "ติดต่อธุรกิจ", "ผจญภัย/เดินป่า", "ช้อปปิ้งในเมือง"],
         "gender": "เพศ",
         "male": "ชาย",
         "female": "หญิง",
@@ -46,9 +48,11 @@ LANG_DICT = {
         "logout": "Logout",
         "travel_info": "🗓️ Travel Info",
         "dest": "Destination",
+        "dest_list": ["Japan", "Korea", "Vietnam", "Taiwan", "China"],
         "start": "Start Date",
         "end": "End Date",
         "activity": "Activity",
+        "act_list": ["Photography", "Ski/Snow", "Business", "Hiking", "Shopping"],
         "gender": "Gender",
         "male": "Male",
         "female": "Female",
@@ -71,69 +75,51 @@ LANG_DICT = {
 # --- ⚙️ 1. ฟังก์ชันประมวลผล Logic ---
 def process_logic(api_key, country, activity, gender, use_free_mode, uploaded_file, lang, start_date, end_date):
     days = (end_date - start_date).days + 1
-    t = LANG_DICT[lang]
-    
     if api_key and not use_free_mode:
         try:
             client = OpenAI(api_key=api_key)
-            p_critique = f"Analyze this outfit for 1.8°C in {country} ({days} days). Summary in {lang}."
-            p_detail = f"Packing list for {country} for {days} days, Activity: {activity} in {lang}."
-
-            v_out = "No image found"
+            p_critique = f"Analyze for 1.8°C in {country} ({days} days). Response in {lang}."
+            v_out = "No image"
             if uploaded_file:
                 b64_img = base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
                 v_resp = client.chat.completions.create(
                     model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": [
-                        {"type": "text", "text": p_critique},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
-                    ]}]
+                    messages=[{"role": "user", "content": [{"type": "text", "text": p_critique}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}]}]
                 )
                 v_out = v_resp.choices[0].message.content
-            
-            r_resp = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": p_detail}])
-            r_out = r_resp.choices[0].message.content
-            
-            img_resp = client.images.generate(model="dall-e-3", prompt=f"3D character {gender} in {country} winter gear Pixar style", n=1)
-            return v_out, r_out, img_resp.data[0].url
+            img_url = "https://images.unsplash.com/photo-1548126032-079a0fb0099d?q=80&w=1000"
+            return v_out, img_url
         except Exception as e:
-            return f"Error: {e}", "Check API Key", None
+            return f"Error: {e}", None
     else:
-        v_free = "1. **Outer**: Down Jacket\n2. **Bottom**: Fleece Lined\n3. **Head**: Beanie\n4. **Feet**: Wool Socks\n5. **Extra**: Hot Packs" if lang == "English" else "1. **เสื้อชั้นนอก**: ควรใช้ Padding Jacket\n2. **กางเกง**: กางเกงบุขน\n3. **ศีรษะ**: หมวกไหมพรม\n4. **เท้า**: ถุงเท้าขนแกะ\n5. **เสริม**: แผ่นแปะความร้อน"
-        r_free = f"Suggest: {max(1, days//2)} extra sets."
-        sample_img = "https://images.unsplash.com/photo-1548126032-079a0fb0099d?q=80&w=1000"
-        return v_free, r_free, sample_img
+        v_free = "1. Outer: Down Jacket\n2. Bottom: Fleece Lined" if lang=="English" else "1. เสื้อนอก: Padding Jacket\n2. กางเกง: บุขน"
+        return v_free, "https://images.unsplash.com/photo-1548126032-079a0fb0099d?q=80&w=1000"
 
 # --- 🎨 2. หน้า Dashboard ---
 def main_dashboard():
-    # ดึงภาษาที่เลือก
     lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DICT[lang]
 
-    # Sidebar Settings
     with st.sidebar:
         st.title(t["settings"])
         st.radio(t["lang_label"], ["Thai", "English"], key='lang_choice')
         api_key = st.text_input("OpenAI API Key", type="password")
         use_free_mode = st.toggle(t["free_mode"], value=not api_key)
+        theme_mode = st.toggle(t["theme_label"], value=False)
         
-        # 2. เพิ่มปุ่มสลับโหมดสว่าง/มืด (Theme Toggle)
-        theme_mode = st.toggle(t["theme_label"], value=False, help="Light/Dark Mode")
-        theme_css = """
-            <style>
-            .stApp { background-color: #121212; color: white; }
-            .analysis-box { background: #1e1e1e !important; color: #e0e0e0 !important; border: 1px solid #333 !important; }
-            .shop-card { background: #252525 !important; color: white !important; border: 1px solid #444 !important; }
-            </style>
-        """ if theme_mode else """
-            <style>
-            .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
-            .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }
-            </style>
-        """
-        st.markdown(theme_css, unsafe_allow_html=True)
+        if theme_mode:
+            st.markdown("""<style>
+                .stApp { background-color: #1E293B; color: #F8FAFC; }
+                .analysis-box { background: #334155 !important; color: #F1F5F9 !important; border: 1px solid #475569 !important; padding:20px; border-radius:12px; }
+                .shop-card { background: #334155 !important; color: white !important; border: 1px solid #475569 !important; border-left: 5px solid #6366F1 !important; padding:15px; border-radius:10px; margin-bottom:10px; }
+            </style>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<style>
+                .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
+                .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }
+            </style>""", unsafe_allow_html=True)
 
-        if st.button(t["logout"], use_container_width=True): 
+        if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
             st.rerun()
 
@@ -143,19 +129,18 @@ def main_dashboard():
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
-            # --- แก้ไขบรรทัดที่ 165 เป็นต้นไป ในฟังก์ชัน login_page ---
+            country = st.selectbox(t["dest"], t["dest_list"])
+            d_col1, d_col2 = st.columns(2)
+            start_date = d_col1.date_input(t["start"], datetime.now())
+            end_date = d_col2.date_input(t["end"], datetime.now() + timedelta(days=5))
+            activity = st.selectbox(t["activity"], t["act_list"])
+            gender = st.radio(t["gender"], [t["male"], t["female"]])
+            img_file = st.file_uploader(t["upload"], type=['jpg', 'png', 'jpeg'])
+            run_btn = st.button(t["run"], use_container_width=True)
 
-    # 1. แสดงโลโก้ใหม่และชื่อแอปให้สวยขึ้น
-    col_logo, col_text = st.columns([1, 4])
-    with col_logo:
-        # ใส่ URL รูปโลโก้ที่คุณเลือก (ตัวอย่างนี้ใช้รูปที่คุณอัปโหลดล่าสุด)
-        st.image("https://path-to-your-logo/tripnify_logo.png", width=80) 
-    with col_text:
-        st.markdown("<h1 style='margin-top: -10px;'>Tripnify</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 18px; color: gray;'>จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ</p>", unsafe_allow_html=True)
-    
-    st.markdown("---")
-            
+    with col2:
+        if run_btn:
+            v_out, img_url = process_logic(api_key, country, activity, gender, use_free_mode, img_file, lang, start_date, end_date)
             w_col1, w_col2 = st.columns([1, 2])
             with w_col1: st.metric(label=t["temp"], value="1.8°C")
             with w_col2: st.warning(t["warn"])
@@ -163,22 +148,12 @@ def main_dashboard():
             st.divider()
             st.markdown(f"### {t['analysis_title']}")
             st.markdown(f'<div class="analysis-box">{v_out}</div>', unsafe_allow_html=True)
-            
-            if img_url: 
-                st.markdown(f"### {t['ai_img']}")
-                st.image(img_url, use_container_width=True)
-            
-            st.markdown(f"### {t['essential_title']}")
-            for i, item in enumerate(t["essentials"], 1):
-                st.write(f"{i}. **{item}**")
-            
+            if img_url: st.image(img_url, use_container_width=True)
             st.markdown(f"### {t['shop_title']}")
             for it in t["essentials"]:
-                st.markdown(f"""<div class="shop-card"><strong>🔹 {it}</strong><br>
-                    <a href='https://shopee.co.th/search?keyword={quote_plus(it)}' target='_blank'>🛒 Shopee</a> | 
-                    <a href='https://www.lazada.co.th/catalog/?q={quote_plus(it)}' target='_blank'>🛒 Lazada</a></div>""", unsafe_allow_html=True)
+                st.markdown(f'<div class="shop-card"><strong>🔹 {it}</strong><br><a href="https://shopee.co.th/search?keyword={quote_plus(it)}" target="_blank">🛒 Shopee</a></div>', unsafe_allow_html=True)
         else:
-            st.info("👈 " + ("Please enter info and run" if lang=="English" else "กรุณากรอกข้อมูลและกดเริ่มวิเคราะห์"))
+            st.info("👈 กรุณากรอกข้อมูลและกดเริ่มวิเคราะห์")
 
 # --- 🔑 3. หน้า Login ---
 def login_page():
@@ -188,8 +163,14 @@ def login_page():
         .social-text { color: #3c4043; font-family: sans-serif; font-weight: 500; font-size: 14px; }
     </style>""", unsafe_allow_html=True)
 
-    st.title("🌍 Tripnify Login")
-    st.subheader("จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ")
+    # --- ส่วนที่แก้ให้ Logo อยู่กึ่งกลาง ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<center>", unsafe_allow_html=True)
+    # ใส่ Link รูปโลโก้ของคุณที่นี่ (ตอนนี้เป็นรูปตัวอย่าง)
+    st.image("https://cdn-icons-png.flaticon.com/512/201/201623.png", width=120)
+    st.markdown("<h1 style='margin-bottom: 0;'>Tripnify</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 18px; color: gray;'>จัดกระเป๋าให้พร้อมสำหรับทุกสภาพอากาศ</p>", unsafe_allow_html=True)
+    st.markdown("</center>", unsafe_allow_html=True)
     st.markdown("---")
     
     google_logo = "https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
