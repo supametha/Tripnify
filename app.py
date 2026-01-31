@@ -177,31 +177,60 @@ def main_dashboard():
             st.info("👈 กรอกข้อมูลแล้วกดเริ่มวิเคราะห์")
 
 # -------------------------------
-# 🔑 Login Page (ใช้จาก code ที่ให้มา)
-# -------------------------------
+# --- 🔑 4. หน้า Login ---
 def login_page():
-    t = LANG_DATA["Thai"]
+    current_lang = st.session_state.get('lang_choice', 'Thai')
+    t = LANG_DATA[current_lang]
+
+    st.markdown("""<style>
+        .header-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 30px 0; }
+        .social-btn-custom { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
+        .social-icon { width: 20px; margin-right: 12px; }
+        .social-text { font-weight: 500; font-size: 14px; color: #3c4043; }
+    </style>""", unsafe_allow_html=True)
+
     st.markdown(f"""
-    <div style="text-align:center;padding:40px">
-        <h1 style="font-size:3rem">Tripnify</h1>
-        <p>{t['login_sub']}</p>
-    </div>
+        <div class="header-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
+            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
+            <p style='color: gray; font-size: 1.2rem; margin-top: -15px;'>{t['login_sub']}</p>
+        </div>
     """, unsafe_allow_html=True)
 
-    _, c, _ = st.columns([1,1.5,1])
-    with c:
-        if st.button(t["login_btn"], use_container_width=True, type="primary"):
-            st.session_state['logged_in'] = True
-            st.rerun()
-        if st.button(t["guest_btn"], use_container_width=True):
-            st.session_state['logged_in'] = True
-            st.rerun()
+    _, c2, _ = st.columns([1, 1.6, 1])
+    with c2:
+        st.markdown(f"""<div class="social-btn-custom">
+            <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
+            <span class="social-text">เข้าสู่ระบบด้วย Google</span>
+        </div>""", unsafe_allow_html=True)
+        if st.button("", key="g_login", use_container_width=True):
+            st.session_state['logged_in'] = True; st.rerun()
 
-# -------------------------------
-# 🚀 Main
-# -------------------------------
+        st.markdown(f"""<div class="social-btn-custom">
+            <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
+            <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
+        </div>""", unsafe_allow_html=True)
+        if st.button("", key="f_login", use_container_width=True):
+            st.session_state['logged_in'] = True; st.rerun()
+
+        st.markdown("<hr style='margin: 25px 0; opacity: 0.3;'>", unsafe_allow_html=True)
+        user = st.text_input("Username", placeholder="Username")
+        pwd = st.text_input("Password", type="password", placeholder="Password")
+        
+        if st.button(t["login_btn"], use_container_width=True, type="primary"):
+            st.session_state['logged_in'] = True; st.rerun()
+
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1: st.button(t["reg_btn"], use_container_width=True)
+        with col_sub2:
+            if st.button(t["guest_btn"], use_container_width=True):
+                st.session_state['logged_in'] = True; st.rerun()
+
+# --- 🚀 5. Main Controller ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
+if 'lang_choice' not in st.session_state:
+    st.session_state['lang_choice'] = 'Thai'
 
 if st.session_state['logged_in']:
     main_dashboard()
