@@ -72,63 +72,6 @@ CITY_DATA = {
     "ไต้หวัน": ["ไทเป", "เกาสง"],
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
-# -------------------------------
-# 🌦️ Weather Function (เพิ่มใหม่)
-# -------------------------------
-def get_real_weather(city_name, api_key):
-    if not api_key:
-        return {
-            "temp": 2,
-            "feels_like": -1,
-            "desc": "กรุณาใส่ API Key",
-            "main": "Clouds",
-            "wind": 5,
-            "humidity": 80,
-            "visibility": 10,
-            "pressure": 1015,
-            "clouds": 90
-        }
-    try:
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={api_key}&units=metric&lang=th"
-        res = requests.get(url, timeout=5).json()
-        if res.get("cod") == 200:
-            return {
-                "temp": int(res["main"]["temp"]),
-                "feels_like": int(res["main"]["feels_like"]),
-                "desc": res["weather"][0]["description"],
-                "main": res["weather"][0]["main"],
-                "wind": res["wind"]["speed"],
-                "humidity": res["main"]["humidity"],
-                "visibility": res.get("visibility", 0) // 1000,
-                "pressure": res["main"]["pressure"],
-                "clouds": res["clouds"]["all"]
-            }
-    except:
-        pass
-
-    return {
-        "temp": 2,
-        "feels_like": -1,
-        "desc": "Error: เชื่อมต่อไม่ได้",
-        "main": "Clouds",
-        "wind": 5,
-        "humidity": 80,
-        "visibility": 10,
-        "pressure": 1015,
-        "clouds": 90
-    }
-
-def get_weather_bg(main):
-    if main == "Snow":
-        return "https://images.unsplash.com/photo-1608889175123-8ee362201f3d"
-    elif main == "Rain":
-        return "https://images.unsplash.com/photo-1501696461415-6bd6660c6742"
-    elif main == "Clear":
-        return "https://images.unsplash.com/photo-1501973801540-537f08ccae7b"
-    elif main == "Clouds":
-        return "https://images.unsplash.com/photo-1499346030926-9a72daac6c63"
-    else:
-        return "https://images.unsplash.com/photo-1502082553048-f009c37129b9"
 
 
 # -------------------------------
