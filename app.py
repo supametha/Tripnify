@@ -73,7 +73,6 @@ CITY_DATA = {
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
 
-
 # -------------------------------
 # 🎭 3D Model (Premium)
 # -------------------------------
@@ -84,8 +83,8 @@ def render_3d_model():
         background:radial-gradient(circle,#334155 0%,#0f172a 100%);
         border-radius:20px;display:flex;align-items:center;justify-content:center;
         position:relative;cursor:grab;border:2px solid #6366f1;">
-            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
-            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
+            <div id="character" style="font-size:150px;transition:transform 0.1s linear; user-select:none;">🧥</div>
+            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px; pointer-events:none;">
                 [ ลากเพื่อหมุนดูชุด 360° ]
             </div>
         </div>
@@ -106,33 +105,42 @@ def render_3d_model():
     """, height=420)
 
 # -------------------------------
-# ⚙️ Analysis Logic
+# ⚙️ Analysis Logic (ดักจับ Error Rate Limit)
 # -------------------------------
 def process_analysis(api_key, city, country, activity, free_mode, image, start, end):
     days = (end - start).days + 1
-    if api_key and not free_mode and image:
-        client = OpenAI(api_key=api_key)
-        b64 = base64.b64encode(image.getvalue()).decode()
-        prompt = f"""
-        วิเคราะห์การแต่งกายสำหรับ {city} ประเทศ{country}
-        อุณหภูมิประมาณ 2°C
-        กิจกรรม: {activity}
-        ระยะเวลา {days} วัน
-        ตอบเป็นภาษาไทย
-        """
-        res = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
-                ]
-            }]
-        )
-        return res.choices[0].message.content, True
+    # ข้อความกรณีโหมดฟรี หรือ API มีปัญหา
+    fallback_msg = "แนะนำแต่งกายแบบ Layering: Heattech + เสื้อไหมพรม + เสื้อโค้ทกันหนาว"
 
-    return "แนะนำแต่งกายแบบ Layering: Heattech + เสื้อไหมพรม + เสื้อโค้ทกันหนาว", False
+    if api_key and not free_mode and image:
+        try:
+            client = OpenAI(api_key=api_key)
+            b64 = base64.b64encode(image.getvalue()).decode()
+            prompt = f"""
+            วิเคราะห์การแต่งกายสำหรับ {city} ประเทศ{country}
+            อุณหภูมิประมาณ 2°C
+            กิจกรรม: {activity}
+            ระยะเวลา {days} วัน
+            ตอบเป็นภาษาไทย
+            """
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+                    ]
+                }],
+                timeout=15.0 # ป้องกันแอปค้างนานเกินไป
+            )
+            return res.choices[0].message.content, True
+        except Exception as e:
+            # หากเกิด RateLimitError หรือข้อผิดพลาดอื่นๆ จะแจ้งเตือนแทนการ Crash
+            st.error(f"⚠️ ไม่สามารถเชื่อมต่อ AI ได้ (อาจเกิดจาก API Key มียอดคงเหลือไม่พอ): {str(e)}")
+            return fallback_msg, False
+
+    return fallback_msg, False
 
 # -------------------------------
 # --- 🎨 3. หน้า Dashboard ---
@@ -168,7 +176,6 @@ def main_dashboard():
     st.title("🌍 Tripnify Dashboard")
     col1, col2 = st.columns([1, 1.4])
 
-    # ---------- LEFT ----------
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
@@ -200,37 +207,25 @@ def main_dashboard():
             active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
-    # ---------- RIGHT ----------
     with col2:
         if run_btn:
+            # เรียกใช้งาน logic และดัก Error ภายในตัว
             result, is_premium = process_analysis(
-                api_key,
-                city,
-                country,
-                activity,
-                use_free_mode,
-                active_img,
-                start,
-                end
+                api_key, city, country, activity, use_free_mode, active_img, start, end
             )
 
-            # Weather
             w_col1, w_col2 = st.columns([1, 2])
             w_col1.metric(t["temp_label"], "2°C")
             w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
 
             st.divider()
 
-          # Analysis Text
             st.subheader(t["analysis_title"])
             st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
 
-
-            # 3D Model (Premium)
             if is_premium:
                 render_3d_model()
 
-            # Shopping
             st.divider()
             st.subheader(t["shop_title"])
             for item in t["essentials"]:
@@ -247,9 +242,6 @@ def main_dashboard():
         else:
             st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
 
-
-# -------------------------------
-# --- 🔑 4. หน้า Login ---
 def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
@@ -286,8 +278,8 @@ def login_page():
             st.session_state['logged_in'] = True; st.rerun()
 
         st.markdown("<hr style='margin: 25px 0; opacity: 0.3;'>", unsafe_allow_html=True)
-        user = st.text_input("Username", placeholder="Username")
-        pwd = st.text_input("Password", type="password", placeholder="Password")
+        st.text_input("Username", placeholder="Username")
+        st.text_input("Password", type="password", placeholder="Password")
         
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
             st.session_state['logged_in'] = True; st.rerun()
@@ -298,7 +290,6 @@ def login_page():
             if st.button(t["guest_btn"], use_container_width=True):
                 st.session_state['logged_in'] = True; st.rerun()
 
-# --- 🚀 5. Main Controller ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'lang_choice' not in st.session_state:
