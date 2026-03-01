@@ -107,7 +107,6 @@ def get_weather_data(city_name):
         "main_desc": "Clouds", "clouds": 90
     }
 
-# --- 🖼️ 2. ฟังก์ชันเลือกรูปพื้นหลังตามสภาพอากาศ ---
 def get_weather_bg(main_desc):
     main_desc = main_desc.lower()
     bgs = {
@@ -117,13 +116,11 @@ def get_weather_bg(main_desc):
         "clear": "https://images.unsplash.com/photo-1504386106331-3e4e71712b38?q=80&w=1000",
         "default": "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?q=80&w=1000"
     }
-    
-    if "rain" in main_desc or "drizzle" in main_desc or "thunderstorm" in main_desc: return bgs["rain"]
+    if "rain" in main_desc or "drizzle" in main_desc: return bgs["rain"]
     elif "snow" in main_desc: return bgs["snow"]
     elif "cloud" in main_desc: return bgs["clouds"]
     elif "clear" in main_desc: return bgs["clear"]
     return bgs["default"]
-
 # --- 🎭 3. 3D Model Character ---
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
