@@ -88,35 +88,56 @@ def get_weather_bg(main_desc):
     return bgs["default"]
 
 # -------------------------------
-# 🎭 3D Model (Premium)
+# 🎭 3D Model Render (Updated with Google Model Viewer)
 # -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
-    components.html("""
-        <div id="viewer-3d" style="width:100%;height:400px;
-        background:radial-gradient(circle,#334155 0%,#0f172a 100%);
-        border-radius:20px;display:flex;align-items:center;justify-content:center;
-        position:relative;cursor:grab;border:2px solid #6366f1;">
-            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
-            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
-                [ ลากเพื่อหมุนดูชุด 360° ]
-            </div>
-        </div>
-        <script>
-            const el=document.getElementById('viewer-3d');
-            const char=document.getElementById('character');
-            let drag=false,rot=0,startX=0;
-            el.onmousedown=e=>{drag=true;startX=e.pageX;};
-            window.onmouseup=()=>drag=false;
-            window.onmousemove=e=>{
-                if(!drag)return;
-                const d=e.pageX-startX;
-                rot+=d*0.5;
-                char.style.transform=`rotateY(${rot}deg)`;
-                startX=e.pageX;
-            };
-        </script>
-    """, height=420)
+    
+    # 1. นิยาม URL ของโมเดลพื้นฐานตามรูปภาพหลักที่คุณต้องการ
+    # **ข้อควรระวัง:** คุณต้องมีไฟล์โมเดล 3D (เช่น .glb หรือ .gltf)
+    # ที่เป็นตัวละครหลักตั้งต้น และเก็บไว้ในโฟลเดอร์โครงการของคุณ
+    # สมมติว่าไฟล์ชื่อ 'base_character.glb' อยู่ในโฟลเดอร์เดียวกับ app.py
+    model_url = "base_character.glb"
+
+    # 2. จำลองค่า Variant ชื่อชุดจากผลวิเคราะห์ของ AI
+    # ในแอปพลิเคชันจริง คุณต้องส่งผลวิเคราะห์มาเป็น "ชื่อVariant" ของชุดที่สอดคล้องกัน
+    # เช่น "casual_cold", "ski_resort", "business_casual" เป็นต้น
+    # สำหรับการทดสอบนี้ เราจะใช้ค่าสมมติไปก่อน
+    if 'current_outfit_variant' not in st.session_state:
+        st.session_state['current_outfit_variant'] = "casual_cold" # ค่า Variant ตั้งต้น
+
+    # สร้าง HTML string สำหรับ <model-viewer>
+    html_code = f"""
+    <script type="module" src="https://ajax.googleapis.com/module-viewer/dist/model-viewer.min.js"></script>
+
+    <div style="width: 100%; height: 400px; border-radius: 20px; overflow: hidden; border: 2px solid #6366f1; background-color: #f0f2f6;">
+        <model-viewer id="outfit-viewer"
+                      src="{model_url}"
+                      ar
+                      camera-controls
+                      touch-action="pan-y"
+                      style="width: 100%; height: 100%;">
+        </model-viewer>
+    </div>
+
+    <script>
+        // JavaScript สำหรับจัดการการเปลี่ยน Variant ของชุด
+        const modelViewerVar = document.querySelector('#outfit-viewer');
+        
+        // รับค่าชื่อ Variant ของชุดจาก Python ผ่านการทำ String Interpolation
+        const outfitVariantName = "{st.session_state['current_outfit_variant']}";
+
+        // รอจนกว่าโมเดลจะโหลดเสร็จ
+        modelViewerVar.addEventListener('load', () => {{
+            // ใช้ฟังก์ชัน selection.variant.name เพื่อเปลี่ยน Variant
+            // หมายเหตุ: ไฟล์โมเดลของคุณต้องถูกสร้างมาให้มี Variant ที่ชื่อตรงกัน
+            modelViewerVar.selection.variant.name = outfitVariantName;
+        }});
+    </script>
+    """
+    
+    # แสดงผล HTML
+    components.html(html_code, height=420)
 
 # -------------------------------
 # ⚙️ Analysis Logic
