@@ -75,36 +75,91 @@ CITY_DATA = {
 
 
 # -------------------------------
-# 🎭 3D Model (Premium)
+# 🎭 3D Model Preview (Premium Version)
 # -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
-    components.html("""
-        <div id="viewer-3d" style="width:100%;height:400px;
-        background:radial-gradient(circle,#334155 0%,#0f172a 100%);
-        border-radius:20px;display:flex;align-items:center;justify-content:center;
-        position:relative;cursor:grab;border:2px solid #6366f1;">
-            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
-            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
-                [ ลากเพื่อหมุนดูชุด 360° ]
-            </div>
+    
+    # ตรวจสอบเพศที่เลือก เพื่อดึงรูปตัวละครที่เหมาะสม
+    gender = st.session_state.get('gender_val', 'ชาย')
+    
+    # คุณสามารถเปลี่ยน URL รูปภาพเหล่านี้เป็นรูปตัวละคร 3D ของคุณเองได้
+    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส
+    if gender == 'ชาย' or gender == 'Male':
+        char_img = "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg" # ตัวอย่างรูปชาย
+    else:
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-character-with-winter-clothes_23-2149436192.jpg" # ตัวอย่างรูปหญิง
+
+    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงาม
+    components.html(f"""
+        <style>
+            .viewer-container {{
+                width: 100%;
+                height: 400px;
+                background: radial-gradient(circle, #1e293b 0%, #020617 100%);
+                border-radius: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
+                border: 2px solid #6366f1;
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+                cursor: grab;
+            }}
+            .viewer-container:active {{ cursor: grabbing; }}
+            
+            #character-sprite {{
+                height: 80%;
+                filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+                transition: transform 0.1s ease-out;
+                user-select: none;
+                -webkit-user-drag: none;
+            }}
+            
+            .overlay-hint {{
+                position: absolute;
+                bottom: 20px;
+                background: rgba(0,0,0,0.4);
+                color: #e2e8f0;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 12px;
+                backdrop-filter: blur(4px);
+                pointer-events: none;
+            }}
+        </style>
+
+        <div class="viewer-container" id="viewer">
+            <img id="character-sprite" src="{char_img}" alt="3D Character">
+            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุด 360° ]</div>
         </div>
+
         <script>
-            const el=document.getElementById('viewer-3d');
-            const char=document.getElementById('character');
-            let drag=false,rot=0,startX=0;
-            el.onmousedown=e=>{drag=true;startX=e.pageX;};
-            window.onmouseup=()=>drag=false;
-            window.onmousemove=e=>{
-                if(!drag)return;
-                const d=e.pageX-startX;
-                rot+=d*0.5;
-                char.style.transform=`rotateY(${rot}deg)`;
-                startX=e.pageX;
-            };
+            const viewer = document.getElementById('viewer');
+            const sprite = document.getElementById('character-sprite');
+            let isDragging = false;
+            let startX = 0;
+            let currentRotation = 0;
+
+            viewer.addEventListener('mousedown', (e) => {{
+                isDragging = true;
+                startX = e.pageX;
+            }});
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            window.addEventListener('mousemove', (e) => {{
+                if (!isDragging) return;
+                const deltaX = e.pageX - startX;
+                currentRotation += deltaX * 0.5;
+                
+                // การจำลองการหมุน 3D แบบนุ่มนวล
+                sprite.style.transform = `perspective(1000px) rotateY(${{currentRotation}}deg)`;
+                startX = e.pageX;
+            }});
         </script>
     """, height=420)
-
 # -------------------------------
 # ⚙️ Analysis Logic
 # -------------------------------
