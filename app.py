@@ -75,27 +75,27 @@ CITY_DATA = {
 
 
 # -------------------------------
-# 🎭 3D Model Preview (Premium Version)
+# 🎭 3D Model Preview (Premium Full Body Version)
 # -------------------------------
 def render_3d_model():
-    st.markdown("### 🎭 3D Outfit Character Preview")
+    st.markdown("### 🎭 3D Outfit Character Preview (Full Body)")
     
     # ตรวจสอบเพศที่เลือก เพื่อดึงรูปตัวละครที่เหมาะสม
     gender = st.session_state.get('gender_val', 'ชาย')
     
-    # คุณสามารถเปลี่ยน URL รูปภาพเหล่านี้เป็นรูปตัวละคร 3D ของคุณเองได้
-    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส
+    # --- เปลี่ยน URL รูปภาพตัวอย่างเป็นรูปตัวละคร 3D "เต็มตัว" ---
+    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส (Transparent) และมีความละเอียดสูงพอสมควร
     if gender == 'ชาย' or gender == 'Male':
-        char_img = "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg" # ตัวอย่างรูปชาย
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-boy-wearing-winter-clothes_23-2151240417.jpg" # ตัวอย่างรูปชายเต็มตัวชุดกันหนาว
     else:
-        char_img = "https://img.freepik.com/free-psd/3d-rendering-character-with-winter-clothes_23-2149436192.jpg" # ตัวอย่างรูปหญิง
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-girl-wearing-winter-clothes_23-2151240437.jpg" # ตัวอย่างรูปหญิงเต็มตัวชุดกันหนาว
 
-    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงาม
+    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงามและรองรับรูปเต็มตัว
     components.html(f"""
         <style>
             .viewer-container {{
                 width: 100%;
-                height: 400px;
+                height: 500px; /* เพิ่มความสูงของ container เพื่อให้เห็นเต็มตัว */
                 background: radial-gradient(circle, #1e293b 0%, #020617 100%);
                 border-radius: 24px;
                 display: flex;
@@ -106,11 +106,12 @@ def render_3d_model():
                 border: 2px solid #6366f1;
                 box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
                 cursor: grab;
+                padding-bottom: 30px; /* เว้นที่ด้านล่างสำหรับรองเท้าและข้อความ */
             }}
             .viewer-container:active {{ cursor: grabbing; }}
             
             #character-sprite {{
-                height: 80%;
+                height: 85%; /* ปรับขนาดตัวละครให้เหมาะสมกับความสูงใหม่ */
                 filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
                 transition: transform 0.1s ease-out;
                 user-select: none;
@@ -131,8 +132,8 @@ def render_3d_model():
         </style>
 
         <div class="viewer-container" id="viewer">
-            <img id="character-sprite" src="{char_img}" alt="3D Character">
-            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุด 360° ]</div>
+            <img id="character-sprite" src="{char_img}" alt="3D Full Body Character">
+            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุดเต็มตัว 360° ]</div>
         </div>
 
         <script>
@@ -159,7 +160,7 @@ def render_3d_model():
                 startX = e.pageX;
             }});
         </script>
-    """, height=420)
+    """, height=520) # เพิ่มความสูงของ components.html ให้สอดคล้องกับ CSS
 # -------------------------------
 # ⚙️ Analysis Logic
 # -------------------------------
