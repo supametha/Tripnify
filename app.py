@@ -87,57 +87,41 @@ def get_weather_bg(main_desc):
     elif "clear" in main_desc: return bgs["clear"]
     return bgs["default"]
 
-# -------------------------------
-# 🎭 3D Model Render (Updated with Google Model Viewer)
-# -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
-    
-    # 1. นิยาม URL ของโมเดลพื้นฐานตามรูปภาพหลักที่คุณต้องการ
-    # **ข้อควรระวัง:** คุณต้องมีไฟล์โมเดล 3D (เช่น .glb หรือ .gltf)
-    # ที่เป็นตัวละครหลักตั้งต้น และเก็บไว้ในโฟลเดอร์โครงการของคุณ
-    # สมมติว่าไฟล์ชื่อ 'base_character.glb' อยู่ในโฟลเดอร์เดียวกับ app.py
-    model_url = "base_character.glb"
+    # นำ URL รูปภาพตัวละครหลักของคุณ (รูปที่ 3) มาใส่ที่นี่
+    # หากมีหลายชุดตามผลวิเคราะห์ ให้สร้างเงื่อนไขเปลี่ยน URL รูปภาพตาม session_state
+    character_img = "https://your-image-url.com/character_main.png" 
 
-    # 2. จำลองค่า Variant ชื่อชุดจากผลวิเคราะห์ของ AI
-    # ในแอปพลิเคชันจริง คุณต้องส่งผลวิเคราะห์มาเป็น "ชื่อVariant" ของชุดที่สอดคล้องกัน
-    # เช่น "casual_cold", "ski_resort", "business_casual" เป็นต้น
-    # สำหรับการทดสอบนี้ เราจะใช้ค่าสมมติไปก่อน
-    if 'current_outfit_variant' not in st.session_state:
-        st.session_state['current_outfit_variant'] = "casual_cold" # ค่า Variant ตั้งต้น
+    components.html(f"""
+        <div id="viewer-3d" style="width:100%; height:450px; 
+            background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%);
+            border-radius:20px; display:flex; align-items:center; justify-content:center;
+            position:relative; cursor:grab; border:2px solid #6366f1; overflow:hidden;">
+            
+            <img id="character" src="{character_img}" 
+                style="height:90%; transition:transform 0.1s linear; user-select:none; pointer-events:none;">
+            
+            <div style="position:absolute; bottom:15px; color:#64748b; font-size:12px; font-family:sans-serif;">
+                [ ลากซ้าย-ขวา เพื่อหมุนดูชุด 360° ]
+            </div>
+        </div>
+        <script>
+            const el = document.getElementById('viewer-3d');
+            const char = document.getElementById('character');
+            let drag = false, rot = 0, startX = 0;
 
-    # สร้าง HTML string สำหรับ <model-viewer>
-    html_code = f"""
-    <script type="module" src="https://ajax.googleapis.com/module-viewer/dist/model-viewer.min.js"></script>
-
-    <div style="width: 100%; height: 400px; border-radius: 20px; overflow: hidden; border: 2px solid #6366f1; background-color: #f0f2f6;">
-        <model-viewer id="outfit-viewer"
-                      src="{model_url}"
-                      ar
-                      camera-controls
-                      touch-action="pan-y"
-                      style="width: 100%; height: 100%;">
-        </model-viewer>
-    </div>
-
-    <script>
-        // JavaScript สำหรับจัดการการเปลี่ยน Variant ของชุด
-        const modelViewerVar = document.querySelector('#outfit-viewer');
-        
-        // รับค่าชื่อ Variant ของชุดจาก Python ผ่านการทำ String Interpolation
-        const outfitVariantName = "{st.session_state['current_outfit_variant']}";
-
-        // รอจนกว่าโมเดลจะโหลดเสร็จ
-        modelViewerVar.addEventListener('load', () => {{
-            // ใช้ฟังก์ชัน selection.variant.name เพื่อเปลี่ยน Variant
-            // หมายเหตุ: ไฟล์โมเดลของคุณต้องถูกสร้างมาให้มี Variant ที่ชื่อตรงกัน
-            modelViewerVar.selection.variant.name = outfitVariantName;
-        }});
-    </script>
-    """
-    
-    # แสดงผล HTML
-    components.html(html_code, height=420)
+            el.onmousedown = e => {{ drag = true; startX = e.pageX; el.style.cursor = 'grabbing'; }};
+            window.onmouseup = () => {{ drag = false; el.style.cursor = 'grab'; }};
+            window.onmousemove = e => {{
+                if(!drag) return;
+                const d = e.pageX - startX;
+                rot += d * 0.8; // ปรับความเร็วการหมุน
+                char.style.transform = `rotateY(${{rot}}deg)`;
+                startX = e.pageX;
+            }};
+        </script>
+    """, height=470)
 
 # -------------------------------
 # ⚙️ Analysis Logic
