@@ -72,7 +72,20 @@ CITY_DATA = {
     "ไต้หวัน": ["ไทเป", "เกาสง"],
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
-
+def get_weather_bg(main_desc):
+    main_desc = main_desc.lower()
+    bgs = {
+        "rain": "https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1000",
+        "snow": "https://images.unsplash.com/photo-1478265409131-1f65c88f965c?q=80&w=1000",
+        "clouds": "https://images.unsplash.com/photo-1534088568595-a066f710b721?q=80&w=1000",
+        "clear": "https://images.unsplash.com/photo-1504386106331-3e4e71712b38?q=80&w=1000",
+        "default": "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?q=80&w=1000"
+    }
+    if "rain" in main_desc or "drizzle" in main_desc: return bgs["rain"]
+    elif "snow" in main_desc: return bgs["snow"]
+    elif "cloud" in main_desc: return bgs["clouds"]
+    elif "clear" in main_desc: return bgs["clear"]
+    return bgs["default"]
 
 # -------------------------------
 # 🎭 3D Model (Premium)
