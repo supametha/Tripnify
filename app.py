@@ -1,6 +1,5 @@
 import streamlit as st
 import base64
-import requests
 from openai import OpenAI
 from urllib.parse import quote_plus
 from datetime import datetime, timedelta
@@ -60,8 +59,8 @@ LANG_DATA = {
         "shop_title": "🛍️ Recommended Shopping",
         "login_sub": "Smart Outfit Analysis for Your Trip",
         "login_btn": "🔑 Login",
-        "reg_btn": "Register",
-        "guest_btn": "Guest",
+        "reg_btn": "📝 Register",
+        "guest_btn": "👤 Guest",
         "essentials": ["Winter Coat", "Fleece Pants", "Winter Gloves", "Heat Packs"]
     }
 }
@@ -74,54 +73,10 @@ CITY_DATA = {
     "จีน": ["ปักกิ่ง", "เซี่ยงไฮ้"]
 }
 
-# --- 🌦️ 1. ฟังก์ชันดึงข้อมูลพยากรณ์อากาศจริง ---
-def get_weather_data(city_name):
-    # สำคัญ: ใส่ OpenWeatherMap API Key ของคุณที่นี่
-    api_key = "YOUR_OPENWEATHER_API_KEY" 
-    base_url = "http://api.openweathermap.org/data/2.5/weather?"
-    
-    try:
-        complete_url = f"{base_url}q={city_name}&appid={api_key}&units=metric&lang=th"
-        response = requests.get(complete_url, timeout=5)
-        data = response.json()
-        
-        if data["cod"] != "404":
-            main = data["main"]
-            return {
-                "temp": round(main["temp"]),
-                "feels_like": round(main["feels_like"]),
-                "humidity": main["humidity"],
-                "pressure": main["pressure"],
-                "wind_speed": data["wind"]["speed"],
-                "visibility": data.get("visibility", 10000) // 1000,
-                "desc": data["weather"][0]["description"].capitalize(),
-                "main_desc": data["weather"][0]["main"],
-                "clouds": data["clouds"]["all"]
-            }
-    except:
-        pass
-    
-    return {
-        "temp": 2, "feels_like": -1, "humidity": 80, "pressure": 1015, 
-        "wind_speed": 5, "visibility": 10, "desc": "เมฆมาก (Default)", 
-        "main_desc": "Clouds", "clouds": 90
-    }
 
-def get_weather_bg(main_desc):
-    main_desc = main_desc.lower()
-    bgs = {
-        "rain": "https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1000",
-        "snow": "https://images.unsplash.com/photo-1478265409131-1f65c88f965c?q=80&w=1000",
-        "clouds": "https://images.unsplash.com/photo-1534088568595-a066f710b721?q=80&w=1000",
-        "clear": "https://images.unsplash.com/photo-1504386106331-3e4e71712b38?q=80&w=1000",
-        "default": "https://images.unsplash.com/photo-1476820865390-c52aeebb9891?q=80&w=1000"
-    }
-    if "rain" in main_desc or "drizzle" in main_desc: return bgs["rain"]
-    elif "snow" in main_desc: return bgs["snow"]
-    elif "cloud" in main_desc: return bgs["clouds"]
-    elif "clear" in main_desc: return bgs["clear"]
-    return bgs["default"]
-# --- 🎭 3. 3D Model Character ---
+# -------------------------------
+# 🎭 3D Model (Premium)
+# -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
     components.html("""
@@ -129,8 +84,8 @@ def render_3d_model():
         background:radial-gradient(circle,#334155 0%,#0f172a 100%);
         border-radius:20px;display:flex;align-items:center;justify-content:center;
         position:relative;cursor:grab;border:2px solid #6366f1;">
-            <div id="character" style="font-size:150px;transition:transform 0.1s linear; user-select:none;">🧥</div>
-            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px; pointer-events:none;">
+            <div id="character" style="font-size:150px;transition:transform 0.1s linear;">🧥</div>
+            <div style="position:absolute;bottom:15px;color:#94a3b8;font-size:12px;">
                 [ ลากเพื่อหมุนดูชุด 360° ]
             </div>
         </div>
@@ -150,36 +105,37 @@ def render_3d_model():
         </script>
     """, height=420)
 
-# --- ⚙️ 4. AI Analysis Logic ---
+# -------------------------------
+# ⚙️ Analysis Logic
+# -------------------------------
 def process_analysis(api_key, city, country, activity, free_mode, image, start, end):
     days = (end - start).days + 1
-    fallback_msg = "❄️ แนะนำแต่งกายแบบ Layering: เน้นใส่ Long-john, เสื้อไหมพรม และเสื้อโค้ทกันลมกันน้ำ"
-
     if api_key and not free_mode and image:
-        try:
-            client = OpenAI(api_key=api_key)
-            b64 = base64.b64encode(image.getvalue()).decode()
-            prompt = f"วิเคราะห์การแต่งกายสำหรับไป {city} {country} อุณหภูมิ 2°C กิจกรรม: {activity} ระยะเวลา {days} วัน ตอบเป็นภาษาไทย"
-            
-            res = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
-                    ]
-                }],
-                timeout=15.0
-            )
-            return res.choices[0].message.content, True
-        except Exception as e:
-            st.error(f"⚠️ AI ขัดข้อง: {str(e)}")
-            return fallback_msg, False
-    
-    return fallback_msg, False
+        client = OpenAI(api_key=api_key)
+        b64 = base64.b64encode(image.getvalue()).decode()
+        prompt = f"""
+        วิเคราะห์การแต่งกายสำหรับ {city} ประเทศ{country}
+        อุณหภูมิประมาณ 2°C
+        กิจกรรม: {activity}
+        ระยะเวลา {days} วัน
+        ตอบเป็นภาษาไทย
+        """
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+                ]
+            }]
+        )
+        return res.choices[0].message.content, True
 
-# --- 🎨 5. หน้า Dashboard หลัก ---
+    return "แนะนำแต่งกายแบบ Layering: Heattech + เสื้อไหมพรม + เสื้อโค้ทกันหนาว", False
+
+# -------------------------------
+# --- 🎨 3. หน้า Dashboard ---
 def main_dashboard():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
@@ -188,13 +144,23 @@ def main_dashboard():
         st.subheader(t["settings"])
         st.radio(t["lang_label"], ["Thai", "English"], key='lang_choice', horizontal=True)
         st.divider()
-        api_key_openai = st.text_input(t["api_label"], type="password")
-        use_free_mode = st.toggle(t["free_mode"], value=not api_key_openai)
+        api_key = st.text_input(t["api_label"], type="password")
+        use_free_mode = st.toggle(t["free_mode"], value=not api_key)
+
         dark_mode = st.toggle(t["theme_label"], value=False)
-        
         if dark_mode:
-            st.markdown("""<style>.stApp { background-color: #0f172a; color: #f8fafc; } [data-testid="stSidebar"] { background-color: #1e293b; }</style>""", unsafe_allow_html=True)
-        
+            st.markdown("""<style>
+                .stApp { background-color: #0f172a; color: #f8fafc; }
+                [data-testid="stSidebar"] { background-color: #1e293b; }
+                .analysis-box { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155; padding:20px; border-radius:12px; }
+                .shop-card { background: #334155; padding: 15px; border-radius: 10px; border-left: 5px solid #6366f1; margin-bottom: 10px; }
+            </style>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<style>
+                .analysis-box { background: #fdf6e3; padding: 20px; border-radius: 12px; border: 1px solid #eee8d5; color: #657b83; }
+                .shop-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5; margin-bottom: 10px; }
+            </style>""", unsafe_allow_html=True)
+
         if st.button(t["logout"], use_container_width=True):
             st.session_state['logged_in'] = False
             st.rerun()
@@ -202,102 +168,141 @@ def main_dashboard():
     st.title("🌍 Tripnify Dashboard")
     col1, col2 = st.columns([1, 1.4])
 
+    # ---------- LEFT ----------
     with col1:
         with st.container(border=True):
             st.subheader(t["travel_info"])
             country = st.selectbox(t["dest"], list(CITY_DATA.keys()))
             city = st.selectbox(t["city"], CITY_DATA[country])
+
             d_col1, d_col2 = st.columns(2)
             start = d_col1.date_input(t["start_date"], datetime.now())
             end = d_col2.date_input(t["end_date"], datetime.now() + timedelta(days=3))
-            activity = st.multiselect(t["activity_label"], t["activities"], default=[t["activities"][0]])
-            gender = st.radio(t["gender"], [t["male"], t["female"]], horizontal=True)
+
+            activity = st.multiselect(
+                t["activity_label"],
+                t["activities"],
+                default=[t["activities"][0]]
+            )
+
+            st.session_state['gender_val'] = st.radio(
+                t["gender"], [t["male"], t["female"]], horizontal=True
+            )
+
             st.divider()
             st.subheader(t["upload_section"])
-            img_file = st.file_uploader("", type=['jpg','png','jpeg'])
+            tabs = st.tabs(["📁 คลังภาพ", "📸 ถ่ายภาพ"])
+            with tabs[0]:
+                img_file = st.file_uploader("", type=['jpg','png','jpeg'])
+            with tabs[1]:
+                cam_file = st.camera_input("")
+
+            active_img = img_file if img_file else cam_file
             run_btn = st.button(t["run_btn"], use_container_width=True, type="primary")
 
+    # ---------- RIGHT ----------
     with col2:
         if run_btn:
-            # ดึงข้อมูล Weather จริง
-            w_data = get_weather_data(city)
-            bg_url = get_weather_bg(w_data['main_desc'])
-            
-            # เรียก AI
-            result, is_premium = process_analysis(api_key_openai, city, country, activity, use_free_mode, img_file, start, end)
+            result, is_premium = process_analysis(
+                api_key,
+                city,
+                country,
+                activity,
+                use_free_mode,
+                active_img,
+                start,
+                end
+            )
 
-            # --- ส่วนแสดง Weather Card ---
-            st.markdown(f"""
-                <style>
-                .weather-card {{
-                    background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('{bg_url}');
-                    background-size: cover; background-position: center; border-radius: 20px; padding: 25px; color: white; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-                }}
-                .weather-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }}
-                .grid-item {{ background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(15px); padding: 15px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }}
-                .grid-label {{ font-size: 11px; opacity: 0.7; margin-bottom: 5px; }}
-                .grid-value {{ font-size: 15px; font-weight: 600; }}
-                </style>
-                <div class="weather-card">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <div style="font-size: 64px; font-weight: bold; line-height: 1;">{w_data['temp']}°C</div>
-                            <div style="font-size: 18px; margin-top: 5px;">{w_data['desc']}</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 13px; opacity: 0.8;">{datetime.now().strftime('%H:%M %p')}</div>
-                            <div style="font-size: 22px; font-weight: bold;">{city}</div>
-                            <div style="font-size: 13px;">Feels like {w_data['feels_like']}°C</div>
-                        </div>
-                    </div>
-                    <div class="weather-grid">
-                        <div class="grid-item"><div class="grid-label">💨 Wind</div><div class="grid-value">{w_data['wind_speed']} m/s</div></div>
-                        <div class="grid-item"><div class="grid-label">💧 Humid</div><div class="grid-value">{w_data['humidity']}%</div></div>
-                        <div class="grid-item"><div class="grid-label">👁️ Vis</div><div class="grid-value">{w_data['visibility']} km</div></div>
-                        <div class="grid-item"><div class="grid-label">🌡️ Pres</div><div class="grid-value">{w_data['pressure']} hPa</div></div>
-                        <div class="grid-item"><div class="grid-label">☁️ Cloud</div><div class="grid-value">{w_data['clouds']}%</div></div>
-                        <div class="grid-item"><div class="grid-label">❄️ Snow</div><div class="grid-value">Risk: {w_data['temp'] < 2}</div></div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+            # Weather
+            w_col1, w_col2 = st.columns([1, 2])
+            w_col1.metric(t["temp_label"], "2°C")
+            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
 
+            st.divider()
+
+          # Analysis Text
             st.subheader(t["analysis_title"])
-            st.markdown(f'<div style="background:#f1f5f9; padding:20px; border-radius:12px; color:#1e293b;">{result}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
 
+
+            # 3D Model (Premium)
             if is_premium:
                 render_3d_model()
 
+            # Shopping
             st.divider()
             st.subheader(t["shop_title"])
             for item in t["essentials"]:
-                st.markdown(f"""<div style="background:white; padding:15px; border-radius:10px; border-left:5px solid #4f46e5; margin-bottom:10px; color:black;">
-                    <strong>🔹 {item}</strong><br><a href="https://shopee.co.th/search?keyword={quote_plus(item)}" target="_blank" style="text-decoration:none;color:#4f46e5;">🛒 คลิกเพื่อช้อป</a>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div class="shop-card">
+                        <strong>🔹 {item}</strong><br>
+                        <a href="https://shopee.co.th/search?keyword={quote_plus(item)}"
+                           target="_blank"
+                           style="text-decoration:none;color:#4f46e5;">
+                           🛒 คลิกเพื่อช้อปสินค้าที่เกี่ยวข้อง
+                        </a>
+                    </div>
+                """, unsafe_allow_html=True)
         else:
             st.info("👈 กรุณากรอกข้อมูลและกดปุ่มเริ่มวิเคราะห์เพื่อดูผลลัพธ์")
 
-# --- 🔑 6. หน้า Login ---
+
+# -------------------------------
+# --- 🔑 4. หน้า Login ---
 def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    st.markdown("""<style>.header-container { text-align: center; padding: 30px 0; }</style>""", unsafe_allow_html=True)
-    st.markdown(f"""<div class="header-container"><img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="100">
-    <h1>Tripnify</h1><p>{t['login_sub']}</p></div>""", unsafe_allow_html=True)
+    st.markdown("""<style>
+        .header-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 30px 0; }
+        .social-btn-custom { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
+        .social-icon { width: 20px; margin-right: 12px; }
+        .social-text { font-weight: 500; font-size: 14px; color: #3c4043; }
+    </style>""", unsafe_allow_html=True)
 
-    _, c2, _ = st.columns([1, 1.5, 1])
+    st.markdown(f"""
+        <div class="header-container">
+            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
+            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
+            <p style='color: gray; font-size: 1.2rem; margin-top: -15px;'>{t['login_sub']}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    _, c2, _ = st.columns([1, 1.6, 1])
     with c2:
-        if st.button("เข้าสู่ระบบด้วย Google", use_container_width=True):
+        st.markdown(f"""<div class="social-btn-custom">
+            <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
+            <span class="social-text">เข้าสู่ระบบด้วย Google</span>
+        </div>""", unsafe_allow_html=True)
+        if st.button("", key="g_login", use_container_width=True):
             st.session_state['logged_in'] = True; st.rerun()
-        st.text_input("Username")
-        st.text_input("Password", type="password")
+
+        st.markdown(f"""<div class="social-btn-custom">
+            <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
+            <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
+        </div>""", unsafe_allow_html=True)
+        if st.button("", key="f_login", use_container_width=True):
+            st.session_state['logged_in'] = True; st.rerun()
+
+        st.markdown("<hr style='margin: 25px 0; opacity: 0.3;'>", unsafe_allow_html=True)
+        user = st.text_input("Username", placeholder="Username")
+        pwd = st.text_input("Password", type="password", placeholder="Password")
+        
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
             st.session_state['logged_in'] = True; st.rerun()
-        if st.button(t["guest_btn"], use_container_width=True):
-            st.session_state['logged_in'] = True; st.rerun()
 
-# --- 🚀 7. จุดเริ่มต้นโปรแกรม ---
-if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1: st.button(t["reg_btn"], use_container_width=True)
+        with col_sub2:
+            if st.button(t["guest_btn"], use_container_width=True):
+                st.session_state['logged_in'] = True; st.rerun()
+
+# --- 🚀 5. Main Controller ---
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'lang_choice' not in st.session_state:
+    st.session_state['lang_choice'] = 'Thai'
 
 if st.session_state['logged_in']:
     main_dashboard()
