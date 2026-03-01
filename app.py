@@ -232,16 +232,67 @@ def main_dashboard():
                 end
             )
 
-            # Weather
-            w_col1, w_col2 = st.columns([1, 2])
-            w_col1.metric(t["temp_label"], "2°C")
-            w_col2.warning(f"❄️ สภาพอากาศหนาวจัดใน {city}")
-
-            st.divider()
-
-          # Analysis Text
-            st.subheader(t["analysis_title"])
-            st.markdown(f'<div class="analysis-box">{result}</div>', unsafe_allow_html=True)
+            # --- ส่วนที่แก้ไข: Weather Card แบบเคลื่อนไหวตามรูปที่ 2 ---
+            # 1. ดึงภาพพื้นหลังตามสภาพอากาศ (สมมติว่าเป็น Clouds ตามรูปที่ 2)
+            # ในการใช้งานจริงควรดึงค่าจาก API เช่น weather_desc = "clouds"
+            weather_desc = "clouds" 
+            bg_url = get_weather_bg(weather_desc)
+            
+            st.markdown(f"""
+                <style>
+                @keyframes panBackground {{
+                    0% {{ background-position: 0% 50%; }}
+                    50% {{ background-position: 100% 50%; }}
+                    100% {{ background-position: 0% 50%; }}
+                }}
+                .weather-container {{
+                    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('{bg_url}');
+                    background-size: 200% 200%;
+                    animation: panBackground 20s ease infinite;
+                    border-radius: 25px;
+                    padding: 30px;
+                    color: white;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                    margin-bottom: 20px;
+                }}
+                .weather-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 15px;
+                    margin-top: 20px;
+                }}
+                .info-box {{
+                    background: rgba(255, 255, 255, 0.15);
+                    backdrop-filter: blur(10px);
+                    padding: 15px;
+                    border-radius: 15px;
+                    text-align: center;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                }}
+                </style>
+                <div class="weather-container">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h1 style="font-size: 80px; margin: 0; line-height: 1;">2°C</h1>
+                            <h3 style="margin: 0; opacity: 0.9;">{city}</h3>
+                            <p style="margin: 5px 0 0 0;">Feels like -1°C • เมฆมาก (Default)</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; font-size: 18px;">{datetime.now().strftime('%H:%M %p')}</p>
+                        </div>
+                    </div>
+                    <div class="weather-grid">
+                        <div class="info-box">💨 Wind<br><strong>5 m/s</strong></div>
+                        <div class="info-box">💧 Humid<br><strong>80%</strong></div>
+                        <div class="info-box">👁️ Vis<br><strong>10 km</strong></div>
+                        <div class="info-box">🌡️ Pres<br><strong>1015 hPa</strong></div>
+                        <div class="info-box">☁️ Cloud<br><strong>90%</strong></div>
+                        <div class="info-box">❄️ Snow<br><strong>Risk: False</strong></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            # --- จบส่วนที่แก้ไข ---
 
 
             # 3D Model (Premium)
