@@ -74,88 +74,65 @@ CITY_DATA = {
 }
 
 
-import streamlit as st
-import streamlit.components.v1 as components
-
-# 1. สร้างฟังก์ชันไว้ด้านบน
+# -------------------------------
+# 🎭 3D Model Preview (Premium Version)
+# -------------------------------
 def render_3d_model():
-    # โค้ด HTML/CSS ที่ผมให้ไป...
-    pass
-
-def main_dashboard():
-    st.title("Dashboard")
-    # 2. เรียกใช้ฟังก์ชัน (ต้องมั่นใจว่าชื่อตรงกับด้านบน)
-    render_3d_model() 
-
-if __name__ == "__main__":
-    main_dashboard()
-    st.markdown("### 🎭 3D Full-Body Character Preview")
+    st.markdown("### 🎭 3D Outfit Character Preview")
     
+    # ตรวจสอบเพศที่เลือก เพื่อดึงรูปตัวละครที่เหมาะสม
     gender = st.session_state.get('gender_val', 'ชาย')
     
-    # เปลี่ยน URL เป็นรูปภาพแบบเต็มตัว (แนะนำ PNG ที่เห็นตั้งแต่หัวจรดเท้า)
+    # คุณสามารถเปลี่ยน URL รูปภาพเหล่านี้เป็นรูปตัวละคร 3D ของคุณเองได้
+    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส
     if gender == 'ชาย' or gender == 'Male':
-        char_img = "https://img.freepik.com/free-psd/3d-rendering-boy-avatar-wearing-casual-clothes_23-2150684124.jpg" 
+        char_img = "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg" # ตัวอย่างรูปชาย
     else:
-        char_img = "https://img.freepik.com/free-psd/3d-rendering-avatar-with-long-hair-wearing-winter-clothes_23-2149436195.jpg"
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-character-with-winter-clothes_23-2149436192.jpg" # ตัวอย่างรูปหญิง
 
+    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงาม
     components.html(f"""
         <style>
             .viewer-container {{
                 width: 100%;
-                height: 600px; /* เพิ่มความสูงเพื่อให้เห็นเต็มตัว */
+                height: 400px;
                 background: radial-gradient(circle, #1e293b 0%, #020617 100%);
                 border-radius: 24px;
                 display: flex;
-                align-items: flex-end; /* ให้ตัวละครยืนบนพื้น */
+                align-items: center;
                 justify-content: center;
                 position: relative;
                 overflow: hidden;
                 border: 2px solid #6366f1;
-                box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
                 cursor: grab;
             }}
+            .viewer-container:active {{ cursor: grabbing; }}
             
-            /* พื้นเงาสะท้อนด้านล่างตัวละคร */
-            .viewer-container::after {{
-                content: '';
-                position: absolute;
-                bottom: 20px;
-                width: 200px;
-                height: 20px;
-                background: rgba(0,0,0,0.5);
-                filter: blur(10px);
-                border-radius: 50%;
-                z-index: 0;
-            }}
-
             #character-sprite {{
-                height: 90%; /* ขยายขนาดรูปภาพให้เกือบเต็มพื้นที่ */
-                z-index: 1;
-                filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+                height: 80%;
+                filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
                 transition: transform 0.1s ease-out;
                 user-select: none;
                 -webkit-user-drag: none;
-                transform-origin: center bottom; /* หมุนโดยยึดจากที่เท้ายืน */
             }}
             
             .overlay-hint {{
                 position: absolute;
-                top: 20px; /* ย้ายคำใบ้ไปไว้ด้านบนแทนเพื่อไม่ให้บังเท้า */
-                background: rgba(255,255,255,0.1);
+                bottom: 20px;
+                background: rgba(0,0,0,0.4);
                 color: #e2e8f0;
-                padding: 6px 18px;
+                padding: 5px 15px;
                 border-radius: 20px;
-                font-size: 13px;
-                backdrop-filter: blur(8px);
-                border: 1px solid rgba(255,255,255,0.1);
+                font-size: 12px;
+                backdrop-filter: blur(4px);
                 pointer-events: none;
             }}
         </style>
 
         <div class="viewer-container" id="viewer">
-            <div class="overlay-hint">🖱️ ลากเพื่อหมุนดูชุดแบบ 360°</div>
-            <img id="character-sprite" src="{char_img}" alt="3D Character Full Body">
+            <img id="character-sprite" src="{char_img}" alt="3D Character">
+            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุด 360° ]</div>
         </div>
 
         <script>
@@ -168,39 +145,21 @@ if __name__ == "__main__":
             viewer.addEventListener('mousedown', (e) => {{
                 isDragging = true;
                 startX = e.pageX;
-                viewer.style.cursor = 'grabbing';
             }});
 
-            window.addEventListener('mouseup', () => {{
-                isDragging = false;
-                viewer.style.cursor = 'grab';
-            }});
+            window.addEventListener('mouseup', () => isDragging = false);
 
             window.addEventListener('mousemove', (e) => {{
                 if (!isDragging) return;
                 const deltaX = e.pageX - startX;
-                currentRotation += deltaX * 0.8; // เพิ่มความเร็วในการหมุน
+                currentRotation += deltaX * 0.5;
                 
-                // ใช้ perspective เพื่อให้ดูเหมือน 3D มากขึ้น
-                sprite.style.transform = `perspective(1200px) rotateY(${{currentRotation}}deg)`;
+                // การจำลองการหมุน 3D แบบนุ่มนวล
+                sprite.style.transform = `perspective(1000px) rotateY(${{currentRotation}}deg)`;
                 startX = e.pageX;
             }});
-            
-            // รองรับ Touch Screen สำหรับมือถือ
-            viewer.addEventListener('touchstart', (e) => {{
-                isDragging = true;
-                startX = e.touches[0].pageX;
-            }});
-            window.addEventListener('touchend', () => isDragging = false);
-            window.addEventListener('touchmove', (e) => {{
-                if (!isDragging) return;
-                const deltaX = e.touches[0].pageX - startX;
-                currentRotation += deltaX * 0.8;
-                sprite.style.transform = `perspective(1200px) rotateY(${{currentRotation}}deg)`;
-                startX = e.touches[0].pageX;
-            }});
         </script>
-    """, height=650) # ปรับความสูง iframe ให้ครอบคลุม 600px ของ container
+    """, height=420)
 # -------------------------------
 # ⚙️ Analysis Logic
 # -------------------------------
@@ -345,55 +304,169 @@ def main_dashboard():
 
 
 # -------------------------------
-# --- 🔑 4. หน้า Login ---
+# --- 🔑 4. หน้า Login (Modern UI) ---
+# -------------------------------
 def login_page():
     current_lang = st.session_state.get('lang_choice', 'Thai')
     t = LANG_DATA[current_lang]
 
-    st.markdown("""<style>
-        .header-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 30px 0; }
-        .social-btn-custom { display: flex; align-items: center; justify-content: center; border: 1px solid #dadce0; border-radius: 8px; padding: 10px; margin-bottom: -45px; background: white; position: relative; z-index: 1; pointer-events: none; width: 100%; }
-        .social-icon { width: 20px; margin-right: 12px; }
-        .social-text { font-weight: 500; font-size: 14px; color: #3c4043; }
-    </style>""", unsafe_allow_html=True)
+    # --- ✨ Enhanced CSS for Modern UX/UI ---
+    st.markdown("""
+        <style>
+        /* จัดการพื้นหลังหน้า Login */
+        .stApp {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        
+        /* Container หลักของ Login Card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-top: 20px;
+        }
 
-    st.markdown(f"""
-        <div class="header-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="130">
-            <h1 style='margin-top: 15px; font-size: 3.5rem; font-weight: bold;'>Tripnify</h1>
-            <p style='color: gray; font-size: 1.2rem; margin-top: -15px;'>{t['login_sub']}</p>
-        </div>
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* ปรับแต่งโลโก้ */
+        .brand-logo {
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            margin-bottom: 10px;
+        }
+
+        /* ปุ่ม Social Login แบบทางการ */
+        .social-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        div[data-testid="stVerticalBlock"] > div:has(.social-btn-custom) {
+            padding: 0px;
+        }
+
+        .social-btn-custom {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: -48px; /* Overlay on Streamlit Button */
+            position: relative;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .social-btn-custom:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+        }
+
+        .social-icon { width: 18px; margin-right: 10px; }
+        .social-text { font-weight: 500; font-size: 14px; color: #475569; }
+
+        /* ปรับแต่ง Input Fields */
+        div[data-baseweb="input"] {
+            border-radius: 10px !important;
+            background-color: white !important;
+        }
+        
+        /* ปรับแต่ง Divider */
+        .divider-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+            margin: 20px 0;
+        }
+        .divider-text::before, .divider-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .divider-text span { padding: 0 10px; }
+
+        </style>
     """, unsafe_allow_html=True)
 
-    _, c2, _ = st.columns([1, 1.6, 1])
-    with c2:
+    # --- 🏗️ Layout Structure ---
+    _, col_main, _ = st.columns([1, 1.8, 1])
+
+    with col_main:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        
+        # Header Section
+        st.markdown(f"""
+            <div class="header-container">
+                <img class="brand-logo" src="https://cdn-icons-png.flaticon.com/512/201/201623.png" width="90">
+                <h1 style='color: #1e293b; font-size: 2.5rem; font-weight: 800; margin-bottom: 0;'>Tripnify</h1>
+                <p style='color: #64748b; font-size: 1rem; margin-top: 5px;'>{t['login_sub']}</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Social Login Buttons
         st.markdown(f"""<div class="social-btn-custom">
             <img class="social-icon" src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png">
-            <span class="social-text">เข้าสู่ระบบด้วย Google</span>
+            <span class="social-text">Continue with Google</span>
         </div>""", unsafe_allow_html=True)
         if st.button("", key="g_login", use_container_width=True):
             st.session_state['logged_in'] = True; st.rerun()
 
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
         st.markdown(f"""<div class="social-btn-custom">
             <img class="social-icon" src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg">
-            <span class="social-text" style="color: #1877F2;">เข้าสู่ระบบด้วย Facebook</span>
+            <span class="social-text">Continue with Facebook</span>
         </div>""", unsafe_allow_html=True)
         if st.button("", key="f_login", use_container_width=True):
             st.session_state['logged_in'] = True; st.rerun()
 
-        st.markdown("<hr style='margin: 25px 0; opacity: 0.3;'>", unsafe_allow_html=True)
-        user = st.text_input("Username", placeholder="Username")
-        pwd = st.text_input("Password", type="password", placeholder="Password")
+        # Divider
+        st.markdown('<div class="divider-text"><span>หรือเข้าสู่ระบบด้วยอีเมล</span></div>', unsafe_allow_html=True)
+
+        # Traditional Login Form
+        user = st.text_input("ชื่อผู้ใช้งาน", placeholder="example@email.com")
+        pwd = st.text_input("รหัสผ่าน", type="password", placeholder="••••••••")
+        
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         
         if st.button(t["login_btn"], use_container_width=True, type="primary"):
-            st.session_state['logged_in'] = True; st.rerun()
-
-        col_sub1, col_sub2 = st.columns(2)
-        with col_sub1: st.button(t["reg_btn"], use_container_width=True)
-        with col_sub2:
-            if st.button(t["guest_btn"], use_container_width=True):
+            if user and pwd: # เพิ่ม Validation เบื้องต้น
                 st.session_state['logged_in'] = True; st.rerun()
+            else:
+                st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
 
+        # Secondary Actions
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        col_reg, col_gst = st.columns(2)
+        with col_reg:
+            st.button(f"➕ {t['reg_btn']}", use_container_width=True)
+        with col_gst:
+            if st.button(f"👤 {t['guest_btn']}", use_container_width=True):
+                st.session_state['logged_in'] = True; st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Footer Note
+        st.markdown("""
+            <p style='text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 30px;'>
+                © 2024 Tripnify - Smart Travel Companion. All rights reserved.
+            </p>
+        """, unsafe_allow_html=True)
 # --- 🚀 5. Main Controller ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
