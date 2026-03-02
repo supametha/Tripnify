@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import base64
 from openai import OpenAI
 from urllib.parse import quote_plus
