@@ -75,71 +75,91 @@ CITY_DATA = {
 
 
 # -------------------------------
-# 🎭 3D Model Preview (Full Body Stable Version)
+# 🎭 3D Model Preview (Premium Version)
 # -------------------------------
 def render_3d_model():
     st.markdown("### 🎭 3D Outfit Character Preview")
-
+    
+    # ตรวจสอบเพศที่เลือก เพื่อดึงรูปตัวละครที่เหมาะสม
     gender = st.session_state.get('gender_val', 'ชาย')
-
+    
+    # คุณสามารถเปลี่ยน URL รูปภาพเหล่านี้เป็นรูปตัวละคร 3D ของคุณเองได้
+    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส
     if gender == 'ชาย' or gender == 'Male':
-        model_url = "https://yourdomain.com/male_character.glb"
+        char_img = "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg" # ตัวอย่างรูปชาย
     else:
-        model_url = "https://yourdomain.com/female_character.glb"
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-character-with-winter-clothes_23-2149436192.jpg" # ตัวอย่างรูปหญิง
 
+    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงาม
     components.html(f"""
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
-    <style>
-        .viewer-container {{
-            width: 100%;
-            height: 520px;
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-            border-radius: 24px;
-            overflow: hidden;
-            border: 2px solid #6366f1;
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
-        }}
-
-        model-viewer {{
-            width: 100%;
-            height: 100%;
-            --progress-bar-color: #6366f1;
-        }}
-
-        @media (max-width: 768px) {{
+        <style>
             .viewer-container {{
-                height: 420px;
+                width: 100%;
+                height: 400px;
+                background: radial-gradient(circle, #1e293b 0%, #020617 100%);
+                border-radius: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
+                border: 2px solid #6366f1;
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+                cursor: grab;
             }}
-        }}
-    </style>
+            .viewer-container:active {{ cursor: grabbing; }}
+            
+            #character-sprite {{
+                height: 80%;
+                filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+                transition: transform 0.1s ease-out;
+                user-select: none;
+                -webkit-user-drag: none;
+            }}
+            
+            .overlay-hint {{
+                position: absolute;
+                bottom: 20px;
+                background: rgba(0,0,0,0.4);
+                color: #e2e8f0;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-size: 12px;
+                backdrop-filter: blur(4px);
+                pointer-events: none;
+            }}
+        </style>
 
-    <div class="viewer-container">
-        <model-viewer
-            src="{model_url}"
-            alt="3D Character"
-            auto-rotate
-            auto-rotate-delay="0"
-            rotation-per-second="30deg"
-            camera-controls
-            touch-action="pan-y"
-            interaction-prompt="none"
-            shadow-intensity="1.2"
-            exposure="1.15"
+        <div class="viewer-container" id="viewer">
+            <img id="character-sprite" src="{char_img}" alt="3D Character">
+            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุด 360° ]</div>
+        </div>
 
-            camera-target="0m 0.9m 0m"
-            camera-orbit="0deg 80deg 2.8m"
-            min-camera-orbit="auto auto 2.5m"
-            max-camera-orbit="auto auto 3.2m"
+        <script>
+            const viewer = document.getElementById('viewer');
+            const sprite = document.getElementById('character-sprite');
+            let isDragging = false;
+            let startX = 0;
+            let currentRotation = 0;
 
-            field-of-view="28deg"
-            loading="eager"
-            reveal="auto"
-            ar
-        >
-        </model-viewer>
-    </div>
-    """, height=540)
+            viewer.addEventListener('mousedown', (e) => {{
+                isDragging = true;
+                startX = e.pageX;
+            }});
+
+            window.addEventListener('mouseup', () => isDragging = false);
+
+            window.addEventListener('mousemove', (e) => {{
+                if (!isDragging) return;
+                const deltaX = e.pageX - startX;
+                currentRotation += deltaX * 0.5;
+                
+                // การจำลองการหมุน 3D แบบนุ่มนวล
+                sprite.style.transform = `perspective(1000px) rotateY(${{currentRotation}}deg)`;
+                startX = e.pageX;
+            }});
+        </script>
+    """, height=420)
 # -------------------------------
 # ⚙️ Analysis Logic
 # -------------------------------
