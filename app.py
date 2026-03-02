@@ -74,65 +74,77 @@ CITY_DATA = {
 }
 
 
-# -------------------------------
-# 🎭 3D Model Preview (Premium Version)
-# -------------------------------
-def render_3d_model():
-    st.markdown("### 🎭 3D Outfit Character Preview")
+import streamlit as st
+import streamlit.components.v1 as components
+
+def render_3d_model_full():
+    st.markdown("### 🎭 3D Full-Body Character Preview")
     
-    # ตรวจสอบเพศที่เลือก เพื่อดึงรูปตัวละครที่เหมาะสม
     gender = st.session_state.get('gender_val', 'ชาย')
     
-    # คุณสามารถเปลี่ยน URL รูปภาพเหล่านี้เป็นรูปตัวละคร 3D ของคุณเองได้
-    # แนะนำใช้ไฟล์ PNG ที่มีพื้นหลังโปร่งใส
+    # เปลี่ยน URL เป็นรูปภาพแบบเต็มตัว (แนะนำ PNG ที่เห็นตั้งแต่หัวจรดเท้า)
     if gender == 'ชาย' or gender == 'Male':
-        char_img = "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg" # ตัวอย่างรูปชาย
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-boy-avatar-wearing-casual-clothes_23-2150684124.jpg" 
     else:
-        char_img = "https://img.freepik.com/free-psd/3d-rendering-character-with-winter-clothes_23-2149436192.jpg" # ตัวอย่างรูปหญิง
+        char_img = "https://img.freepik.com/free-psd/3d-rendering-avatar-with-long-hair-wearing-winter-clothes_23-2149436195.jpg"
 
-    # ส่วนของ HTML และ CSS เพื่อสร้าง Preview ที่สวยงาม
     components.html(f"""
         <style>
             .viewer-container {{
                 width: 100%;
-                height: 400px;
+                height: 600px; /* เพิ่มความสูงเพื่อให้เห็นเต็มตัว */
                 background: radial-gradient(circle, #1e293b 0%, #020617 100%);
                 border-radius: 24px;
                 display: flex;
-                align-items: center;
+                align-items: flex-end; /* ให้ตัวละครยืนบนพื้น */
                 justify-content: center;
                 position: relative;
                 overflow: hidden;
                 border: 2px solid #6366f1;
-                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+                box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
                 cursor: grab;
             }}
-            .viewer-container:active {{ cursor: grabbing; }}
             
+            /* พื้นเงาสะท้อนด้านล่างตัวละคร */
+            .viewer-container::after {{
+                content: '';
+                position: absolute;
+                bottom: 20px;
+                width: 200px;
+                height: 20px;
+                background: rgba(0,0,0,0.5);
+                filter: blur(10px);
+                border-radius: 50%;
+                z-index: 0;
+            }}
+
             #character-sprite {{
-                height: 80%;
-                filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+                height: 90%; /* ขยายขนาดรูปภาพให้เกือบเต็มพื้นที่ */
+                z-index: 1;
+                filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
                 transition: transform 0.1s ease-out;
                 user-select: none;
                 -webkit-user-drag: none;
+                transform-origin: center bottom; /* หมุนโดยยึดจากที่เท้ายืน */
             }}
             
             .overlay-hint {{
                 position: absolute;
-                bottom: 20px;
-                background: rgba(0,0,0,0.4);
+                top: 20px; /* ย้ายคำใบ้ไปไว้ด้านบนแทนเพื่อไม่ให้บังเท้า */
+                background: rgba(255,255,255,0.1);
                 color: #e2e8f0;
-                padding: 5px 15px;
+                padding: 6px 18px;
                 border-radius: 20px;
-                font-size: 12px;
-                backdrop-filter: blur(4px);
+                font-size: 13px;
+                backdrop-filter: blur(8px);
+                border: 1px solid rgba(255,255,255,0.1);
                 pointer-events: none;
             }}
         </style>
 
         <div class="viewer-container" id="viewer">
-            <img id="character-sprite" src="{char_img}" alt="3D Character">
-            <div class="overlay-hint">[ ลากเมาส์เพื่อหมุนดูชุด 360° ]</div>
+            <div class="overlay-hint">🖱️ ลากเพื่อหมุนดูชุดแบบ 360°</div>
+            <img id="character-sprite" src="{char_img}" alt="3D Character Full Body">
         </div>
 
         <script>
@@ -145,21 +157,39 @@ def render_3d_model():
             viewer.addEventListener('mousedown', (e) => {{
                 isDragging = true;
                 startX = e.pageX;
+                viewer.style.cursor = 'grabbing';
             }});
 
-            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mouseup', () => {{
+                isDragging = false;
+                viewer.style.cursor = 'grab';
+            }});
 
             window.addEventListener('mousemove', (e) => {{
                 if (!isDragging) return;
                 const deltaX = e.pageX - startX;
-                currentRotation += deltaX * 0.5;
+                currentRotation += deltaX * 0.8; // เพิ่มความเร็วในการหมุน
                 
-                // การจำลองการหมุน 3D แบบนุ่มนวล
-                sprite.style.transform = `perspective(1000px) rotateY(${{currentRotation}}deg)`;
+                // ใช้ perspective เพื่อให้ดูเหมือน 3D มากขึ้น
+                sprite.style.transform = `perspective(1200px) rotateY(${{currentRotation}}deg)`;
                 startX = e.pageX;
             }});
+            
+            // รองรับ Touch Screen สำหรับมือถือ
+            viewer.addEventListener('touchstart', (e) => {{
+                isDragging = true;
+                startX = e.touches[0].pageX;
+            }});
+            window.addEventListener('touchend', () => isDragging = false);
+            window.addEventListener('touchmove', (e) => {{
+                if (!isDragging) return;
+                const deltaX = e.touches[0].pageX - startX;
+                currentRotation += deltaX * 0.8;
+                sprite.style.transform = `perspective(1200px) rotateY(${{currentRotation}}deg)`;
+                startX = e.touches[0].pageX;
+            }});
         </script>
-    """, height=420)
+    """, height=650) # ปรับความสูง iframe ให้ครอบคลุม 600px ของ container
 # -------------------------------
 # ⚙️ Analysis Logic
 # -------------------------------
