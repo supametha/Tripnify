@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import base64
 from openai import OpenAI
 from urllib.parse import quote_plus
@@ -78,7 +77,18 @@ CITY_DATA = {
 import streamlit as st
 import streamlit.components.v1 as components
 
-def render_3d_model_full():
+# 1. สร้างฟังก์ชันไว้ด้านบน
+def render_3d_model():
+    # โค้ด HTML/CSS ที่ผมให้ไป...
+    pass
+
+def main_dashboard():
+    st.title("Dashboard")
+    # 2. เรียกใช้ฟังก์ชัน (ต้องมั่นใจว่าชื่อตรงกับด้านบน)
+    render_3d_model() 
+
+if __name__ == "__main__":
+    main_dashboard()
     st.markdown("### 🎭 3D Full-Body Character Preview")
     
     gender = st.session_state.get('gender_val', 'ชาย')
